@@ -38,7 +38,7 @@ Located in `experiments/multiagent_coding/`:
 - Reference examples for non-coding scenarios are stored in `noncoding_examples_for_reference/`
 
 #### Aggregation
-- `experiments/aggregation.py`: Implementation of aggregation experiments
+- `experiments/aggregation.py`: Implementation of aggregation experiment
 
 ### Utilities
 
@@ -59,23 +59,6 @@ The project requires the following Python libraries:
 - `python-dotenv` - Environment variable management
 - `requests` - HTTP requests for API interactions
 - `smolagents` - Agent framework for multi-agent systems
-
-### Language Model Integrations
-- `langchain-anthropic` - Anthropic Claude integration
-- `langchain-openai` - OpenAI integration
-- `langchain-google-genai` - Google Generative AI integration
-- `langchain-core` - Core LangChain functionality
-- `langgraph` - Graph-based agent orchestration
-
-### Document Processing & Search
-- `langchain-community` - Community tools and utilities
-- `langchain-experimental` - Experimental LangChain features
-- `faiss-cpu` - Vector similarity search
-
-### Telemetry & Monitoring
-- `openinference` - Instrumentation for agent monitoring
-- `opentelemetry-sdk` - Telemetry data collection
-- `opentelemetry-exporter-otlp` - Telemetry data export
 
 ### Installation
 
