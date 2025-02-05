@@ -16,7 +16,7 @@ def get_openrouter_completion(prompt, model="openai/gpt-4o"):
             "messages": [
                 {
                     "role": "user",
-                    "cont ent": prompt
+                    "content": prompt
                 }
             ]
         }
@@ -40,7 +40,7 @@ def gemini2flash(prompt):
 
 def gemini2pro(prompt):
     """Wrapper function for Gemini 2 Pro"""
-    return get_openrouter_completion(prompt, model="google/gemini-2.0-pro")
+    return get_openrouter_completion(prompt, model="google/gemini-2.0-pro-exp-02-05:free")
 
 def test():
     # Test GPT-4o
@@ -51,6 +51,6 @@ def test():
     claude_response = claude35sonnet("What is the meaning of life?")
     print("Claude 3.5 Sonnet response:", claude_response)
     
-    # Test Gemini 2 Flash
-    gemini_response = gemini2flash("What is the meaning of life?")
-    print("Gemini 2 Flash response:", gemini_response)
+    # Test Gemini 2 Pro
+    gemini_pro_response = gemini2pro("What is the meaning of life?")
+    print("Gemini 2 Pro response:", gemini_pro_response)
