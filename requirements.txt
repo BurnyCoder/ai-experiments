@@ -1,0 +1,33 @@
+# Core dependencies
+python-dotenv
+requests
+
+# LLM and Agent frameworks
+smolagents
+langgraph
+langchain
+langchain-anthropic
+langchain-openai
+langchain-google-genai
+langchain-community
+langchain-experimental
+
+# Vector stores and embeddings
+faiss-cpu
+
+# API Wrappers
+anthropic
+google-generativeai
+openai
+
+# Telemetry and Monitoring
+opentelemetry-api
+opentelemetry-exporter-otlp
+openinference-instrumentation-smolagents
+
+# Development tools
+e2b
+
+# Optional dependencies
+wikipedia
+duckduckgo-search
