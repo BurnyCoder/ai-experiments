@@ -1,7 +1,7 @@
 from utils.openrouter import gpt4o, claude35sonnet, gemini2flash
 
 
-def aggregate(prompt):
+def synthesize(prompt):
     """
     Call multiple LLM models and synthesize their responses.
     
@@ -27,8 +27,8 @@ def aggregate(prompt):
     Please synthesize these responses into a comprehensive answer that captures the key insights from all models.
     """
     
-    # Get a synthesis using Claude 3.5 Sonnet
-    synthesis = claude35sonnet(synthesis_prompt)
+    # Get a synthesis using Gemini 2 Flash
+    synthesis = gemini2flash(synthesis_prompt)
     synthesis_text = synthesis
     
     # Return all results
@@ -40,16 +40,3 @@ def aggregate(prompt):
         },
         "synthesis": synthesis_text
     }
-
-
-def test():
-    test_prompt = "What are the three most important considerations when designing a new programming language?"
-    results = aggregate(test_prompt)
-    
-    print("\nIndividual Responses:")
-    for model, response in results["individual_responses"].items():
-        print(f"\n{model.upper()}:")
-        print(response)
-        
-    print("\nSynthesized Response:")
-    print(results["synthesis"])
