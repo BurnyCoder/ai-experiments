@@ -36,21 +36,43 @@ def claude35sonnet(prompt):
 
 def gemini2flash(prompt):
     """Wrapper function for Gemini 2 Flash"""
-    return get_openrouter_completion(prompt, model="google/gemini-2.0-flash")
+    return get_openrouter_completion(prompt, model="google/gemini-2.0-flash-001")
 
 def gemini2pro(prompt):
     """Wrapper function for Gemini 2 Pro"""
     return get_openrouter_completion(prompt, model="google/gemini-2.0-pro-exp-02-05:free")
 
+def gemini2flashthinking(prompt):
+    """Wrapper function for Gemini 2 Flash Thinking"""
+    return get_openrouter_completion(prompt, model="google/gemini-2.0-flash-thinking-exp:free")
+    #return get_openrouter_completion(prompt, model="google/gemini-2.0-flash-thinking-exp-1219:free")
+
+def gemini2flashthinking2(prompt):
+    """Wrapper function for Gemini 2 Flash Thinking"""
+    #return get_openrouter_completion(prompt, model="google/gemini-2.0-flash-thinking-exp:free")
+    return get_openrouter_completion(prompt, model="google/gemini-2.0-flash-thinking-exp-1219:free")
+
 def test():
-    # Test GPT-4o
-    gpt4o_response = gpt4o("What is the meaning of life?")
-    print("GPT-4o response:", gpt4o_response)
+    # # Test GPT-4o
+    # gpt4o_response = gpt4o("What is the meaning of life?")
+    # print("GPT-4o response:", gpt4o_response)
     
-    # Test Claude 3.5 Sonnet
-    claude_response = claude35sonnet("What is the meaning of life?")
-    print("Claude 3.5 Sonnet response:", claude_response)
+    # # Test Claude 3.5 Sonnet
+    # claude_response = claude35sonnet("What is the meaning of life?")
+    # print("Claude 3.5 Sonnet response:", claude_response)
     
-    # Test Gemini 2 Pro
-    gemini_pro_response = gemini2pro("What is the meaning of life?")
-    print("Gemini 2 Pro response:", gemini_pro_response)
+    # Test Gemini 2 Flash
+    gemini_flash_response = gemini2flash("What is the meaning of life?")
+    print("Gemini 2 Flash response:", gemini_flash_response)
+    
+    # # Test Gemini 2 Pro
+    # gemini_pro_response = gemini2pro("What is the meaning of life?")
+    # print("Gemini 2 Pro response:", gemini_pro_response)
+
+    # # Test Gemini 2 Flash Thinking
+    # gemini_flash_thinking_response = gemini2flashthinking("What is the meaning of life?")
+    # print("Gemini 2 Flash Thinking response:", gemini_flash_thinking_response)
+
+    # # Test Gemini 2 Flash Thinking 2
+    # gemini_flash_thinking_response2 = gemini2flashthinking2("What is the meaning of life?")
+    # print("Gemini 2 Flash Thinking 2 response:", gemini_flash_thinking_response2)
