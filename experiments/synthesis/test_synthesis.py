@@ -1,8 +1,8 @@
 import os
 from experiments.synthesis.synthesis import synthesize
 
-def test_logic(prompt):
-    results = synthesize(prompt)
+def test_logic(prompt, extra_synthesis_prompt=""):
+    results = synthesize(prompt, extra_synthesis_prompt)
     
     # Create base test directory if it doesn't exist
     base_dir = 'experiments/synthesis/tests'
@@ -33,5 +33,5 @@ def test_logic(prompt):
     print(f"Saved synthesis to {synthesis_file}")
 
 def test():
-    test_logic("What are the main fields and subfields of artificial intelligence? List and briefly describe the key areas.")
+    test_logic("What are the main fields and subfields of artificial intelligence? List and briefly describe the key areas. Make sure to include all subfields.", extra_synthesis_prompt="When synthetizing, try to include all the subfields that all the models mentioned.")
     #test_logic("Code a snake game in python")
