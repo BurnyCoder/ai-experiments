@@ -1,0 +1,5 @@
+For now I'm trying different prompts manually, where I guess the synthesis will be more accurate 
+
+The synthesis is better when the models list some knowledge, e.g. AI subfields, because each model has different knowledge.
+
+I asked to synthesize everything that models listed as AI subfields into one bigger list. using Gemini 2 Flash without extra revision of the synthesis wasn't good, as it missed for example genetic algorithms, but when i added extra revision prompt, this got better. 

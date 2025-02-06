@@ -6,4 +6,10 @@ change this multiagent example to a coding agent and code review agent @Smolagen
 
 import and test @openrouter.py
 
-add readme thaat describes the structure of this repo with all the files included
+add readme that describes the structure of this repo with all the files included
+
+ask @synthesis.py what are all AI fields and save results to tests dir in current dir, saving each prompt result to each file separately
+
+add the outputs from the other models into the prompt
+
+add double checking prompt 
