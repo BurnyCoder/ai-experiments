@@ -1,3 +1,4 @@
+import asyncio
 from experiments.synthesis.test_synthesis import test
 
-test()
+asyncio.run(test())
