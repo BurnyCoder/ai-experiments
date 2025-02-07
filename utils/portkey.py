@@ -49,7 +49,7 @@ def gemini2pro(prompt):
     return completion.choices[0].message.content
 
 def gemini2flashthinking(prompt):
-    """Wrapper function for Gemini 2 Flash"""
+    """Wrapper function for Gemini 2 Flash Thinking"""
     completion = portkey_google.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="gemini-2.0-flash-thinking-exp-01-21",

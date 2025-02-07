@@ -17,13 +17,25 @@ from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyM
 
 load_dotenv()
 openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
-#model = "claude-3-5-sonnet-latest"
+model = "claude-3-5-sonnet-latest"
 # model = "gemini-2.0-flash-thinking-exp-01-21"
 # model = "gemini-2.0-pro-exp-02-05"
 # model = "gemini-2.0-pro-exp"
 # model = "gemini-2.0-pro-exp"
-#model = "gemini-exp-1206"
-model = "gemini-2.0-flash"
+# model = "gemini-exp-1206"
+# model = "gemini-2.0-flash"
+
+authorized_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "random", "queue", "time", "datetime", "math", "re",
+            'unicodedata', 'itertools', 'collections', 'json', 'csv', 'os', 'sys', 'pathlib', 'typing',
+            'dataclasses', 'enum', 'abc', 'functools', 'operator', 'copy', 'pprint', 'logging',
+            'argparse', 'configparser', 'yaml', 'requests', 'urllib', 'http', 'socket', 'email',
+            'hashlib', 'base64', 'uuid', 'decimal', 'fractions', 'numbers', 'array', 'bisect',
+            'heapq', 'weakref', 'types', 'calendar', 'zoneinfo', 'locale', 'gettext', 'threading',
+            'multiprocessing', 'concurrent', 'asyncio', 'contextvars', 'signal', 'mmap', 'readline',
+            'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
+            'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
+            'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
+            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess']
 
 @tool
 def read_file(filepath: str) -> str:
@@ -42,11 +54,11 @@ def read_file(filepath: str) -> str:
         return f"Error reading file: {str(e)}"
 
 @tool 
-def read_directory(dirpath: str) -> str:
+def read_directory(dirpath: str = "") -> str:
     """
     Lists contents of a directory.
     Args:
-        dirpath: Path to the directory to read
+        dirpath: Path to the directory to read. If empty, returns contents of entire project directory.
     Returns:
         str: List of files and folders in the directory if successful, error message if failed
     """
@@ -90,6 +102,11 @@ Follow these guidelines:
 - Handle edge cases and errors appropriately
 - Focus on readability and maintainability
 
+You have access to the current project's files in development through the following tools:
+- read_file: Read contents of a file
+- read_directory: List contents of a directory
+- write_file: Write content to a file
+
 When you generate code, send it to the code review critic agent! After its reviewed, send the final code back to the user.
 """ + """
 When you receive a coding task, don't return the final code directly. Instead:
@@ -98,6 +115,11 @@ When you receive a coding task, don't return the final code directly. Instead:
 2. Call the code review agent to review it using the code_review_agent tool
 3. Incorporate the feedback and improvements
 4. Return the final improved code
+
+You have access to the current project's files in development through the following tools:
+- read_file: Read contents of a file
+- read_directory: List contents of a directory
+- write_file: Write content to a file
 
 Remember to:
 - Always use function calling rather than direct responses
@@ -125,6 +147,7 @@ When you are done fixing the code, send the final code back to the user.
             tools=[read_file, read_directory, write_file],
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
+            additional_authorized_imports=authorized_imports,
             #use_e2b_executor=True
         )
         
@@ -134,12 +157,13 @@ When you are done fixing the code, send the final code back to the user.
             description="This is an agent that can review code and provide feedback.",
         )
 
-        self.code_writing_agent = ToolCallingAgent(
-        #self.code_writing_agent = CodeAgent(
+        #self.code_writing_agent = ToolCallingAgent(
+        self.code_writing_agent = CodeAgent(
             tools=[read_file, read_directory, write_file],
             model=self.model,
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
+            additional_authorized_imports=authorized_imports,
             #use_e2b_executor=True
         )
 
