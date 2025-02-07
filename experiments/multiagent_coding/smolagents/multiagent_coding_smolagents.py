@@ -15,6 +15,10 @@ from portkey_ai import createHeaders, PORTKEY_GATEWAY_URL
 from utils.portkey import gemini2flashthinking
 from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
 
+# Base path for AI playground
+AI_PLAYGROUND_PATH = "experiments/multiagent_coding/smolagents/ai_playground/"
+TESTS_PATH = "experiments/multiagent_coding/smolagents/tests/"
+
 load_dotenv()
 openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
 model = "claude-3-5-sonnet-latest"
@@ -46,7 +50,7 @@ def read_file(filepath: str) -> str:
     Returns:
         str: Contents of the file if successful, error message if failed
     """
-    path = "experiments/multiagent_coding/smolagents/ai_playground/"+filepath
+    path = os.path.join(AI_PLAYGROUND_PATH, filepath)
     try:
         with open(path, 'r') as f:
             return f.read()
@@ -62,7 +66,7 @@ def read_directory(dirpath: str = "") -> str:
     Returns:
         str: List of files and folders in the directory if successful, error message if failed
     """
-    path = "experiments/multiagent_coding/smolagents/ai_playground/"+dirpath
+    path = os.path.join(AI_PLAYGROUND_PATH, dirpath)
     try:
         contents = os.listdir(path)
         return "\n".join(contents)
@@ -79,7 +83,7 @@ def write_file(filepath: str, content: str) -> str:
     Returns:
         str: Success message if written, error message if failed
     """
-    path = "experiments/multiagent_coding/smolagents/ai_playground/"+filepath
+    path = os.path.join(AI_PLAYGROUND_PATH, filepath)
     try:
         with open(path, 'w') as f:
             f.write(content)
@@ -148,6 +152,7 @@ When you are done fixing the code, send the final code back to the user.
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
+            max_steps=20,
             #use_e2b_executor=True
         )
         
@@ -164,15 +169,33 @@ When you are done fixing the code, send the final code back to the user.
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
+            max_steps=20,
             #use_e2b_executor=True
         )
 
-    def run(self, prompt):
-        return self.code_writing_agent.run(prompt)
+    def save_logs(self, base_path, agent):
+        """Save agent logs with incrementing number if file exists.
+        
+        Args:
+            base_path (str): Base path to save logs to
+            agent (Agent): Agent to get logs from
+        
+        Returns:
+            str: Path where logs were saved
+        """
+        log_file = base_path + "agent.logs"
+        counter = 1
+        while os.path.exists(log_file):
+            log_file = base_path + f"agent_{counter}.logs"
+            counter += 1
+        write_file(log_file, agent.get_logs())
+        return log_file
 
-    def test(self):
-        return self.code_writing_agent.run("Write a Python function to calculate factorial recursively.")
-    
+    def run(self, prompt):
+        result = self.code_writing_agent.run(prompt)
+        self.save_logs(TESTS_PATH, self.code_writing_agent)
+        return result
+
     def codebase_to_prompt(self):
         #https://github.com/mufeedvh/code2prompt
         return None
