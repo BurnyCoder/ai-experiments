@@ -11,6 +11,7 @@ langchain-openai
 langchain-google-genai
 langchain-community
 langchain-experimental
+"smolagents[e2b]"
 
 # Vector stores and embeddings
 faiss-cpu

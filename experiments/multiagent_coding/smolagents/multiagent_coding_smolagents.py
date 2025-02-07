@@ -6,8 +6,14 @@ from smolagents import (
     ToolCallingAgent,
     tool
 )
-from smolagents import LiteLLMModel
+from smolagents import LiteLLMModel, OpenAIServerModel
 from smolagents.prompts import CODE_SYSTEM_PROMPT
+
+# from langchain_openai import ChatOpenAI
+from portkey_ai import createHeaders, PORTKEY_GATEWAY_URL
+from utils.portkey import gemini2flashthinking
+from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
+
 
 load_dotenv()
 openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
@@ -62,23 +68,24 @@ def write_file(filepath: str, content: str) -> str:
 
 class MultiAgentCoding:
     def __init__(self):
-        self.model = LiteLLMModel("openrouter/anthropic/claude-3-5-sonnet")
-        
+    
+        self.model = PortkeyModel("gemini-2.0-flash-thinking-exp-01-21")
+                
         modified_system_prompt = CODE_SYSTEM_PROMPT + "\nAlways send your generated code to the critic! Send all the relevant bits from the codebase!" # Change the system prompt here
 
         self.code_review_agent = CodeAgent(
             tools=[read_file, read_directory, write_file],
             model=self.model,
-            name="code_review_agent", 
-            description="This is an agent that can review code and provide feedback.",
-            use_e2b_executor=True
+            #use_e2b_executor=True
         )
+        self.code_review_agent.name = "code_review_agent"
+        self.code_review_agent.description = "This is an agent that can review code and provide feedback."
 
         self.code_writing_agent = CodeAgent(
             tools=[read_file, read_directory, write_file],
             model=self.model,
             managed_agents=[self.code_review_agent],
-            use_e2b_executor=True
+            #use_e2b_executor=True
             #system_prompt=modified_system_prompt
         )
 
