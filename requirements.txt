@@ -19,6 +19,7 @@ faiss-cpu
 anthropic
 google-generativeai
 openai
+portkey-ai
 
 # Telemetry and Monitoring
 opentelemetry-api

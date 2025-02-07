@@ -13,3 +13,7 @@ ask @synthesis.py what are all AI fields and save results to tests dir in curren
 add the outputs from the other models into the prompt
 
 add double checking prompt 
+
+import and run @portkey.py 
+
+add claude 3.5 sonnet, gemini 2 pro, gpt 4o 
