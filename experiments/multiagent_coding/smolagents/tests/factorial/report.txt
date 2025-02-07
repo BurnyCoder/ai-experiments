@@ -1,0 +1,2 @@
+	- Gemini thinking, 2 Pro and exp 1206 don't support function calling, but they also fail to follow instructins sometimes and don't call any tools at all. Gemini 2 Flash got stuck in a reading file loop and forgot to use the critic. 
+	- Claude works the best and didn't make errors in my testing, so I tested it with Claude for now.

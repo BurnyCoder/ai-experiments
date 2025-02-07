@@ -17,3 +17,7 @@ add double checking prompt
 import and run @portkey.py 
 
 add claude 3.5 sonnet, gemini 2 pro, gpt 4o 
+
+write support for portkey, extending @smolagents/models.py
+
+optimize this prompt
