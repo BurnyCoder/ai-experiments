@@ -23,7 +23,7 @@ class ChatInterface:
 
     def _setup_page(self):
         """Configure the page settings and title."""
-        st.title("Simple GPT-4 Chat Interface")
+        st.title("Chat Interface")
 
     def display_messages(self):
         """Display all messages in the chat history."""

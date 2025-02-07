@@ -1,18 +1,18 @@
 import streamlit as st
 
 # Must be the first Streamlit command
-st.set_page_config(page_title="GPT-4 Chat", page_icon="💬")
+st.set_page_config(page_title="Chat Interface", page_icon="💬")
 
 import os
 from dotenv import load_dotenv
-from backend.chat_client import ChatClient
+from backend.portkey_chat_client import PortkeyClient
 from frontend.chat_interface import ChatInterface
 
 # Load environment variables
 load_dotenv()
 
 # Initialize the chat client
-chat_client = ChatClient(api_key=os.getenv("OPENAI_API_KEY"))
+chat_client = PortkeyClient()
 
 def handle_message(prompt: str) -> str:
     """Handle new messages by getting completions from the chat client."""
