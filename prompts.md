@@ -21,3 +21,7 @@ add claude 3.5 sonnet, gemini 2 pro, gpt 4o
 write support for portkey, extending @smolagents/models.py
 
 optimize this prompt
+
+mention that you have access to the current project in development using your tools
+
+write the simplest chatbot app with streamlit frontend and @portkey.py backend
