@@ -19,6 +19,10 @@ from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyM
 AI_PLAYGROUND_PATH = "experiments/multiagent_coding/smolagents/ai_playground/"
 TESTS_PATH = "experiments/multiagent_coding/smolagents/tests/"
 
+# Create directories if they don't exist
+os.makedirs(AI_PLAYGROUND_PATH, exist_ok=True)
+os.makedirs(TESTS_PATH, exist_ok=True)
+
 load_dotenv()
 openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
 model = "claude-3-5-sonnet-latest"
@@ -85,6 +89,8 @@ def write_file(filepath: str, content: str) -> str:
     """
     path = os.path.join(AI_PLAYGROUND_PATH, filepath)
     try:
+        # Create parent directories if they don't exist
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
         return f"Successfully wrote to {path}"
@@ -129,6 +135,7 @@ Remember to:
 - Always use function calling rather than direct responses
 - Let the code review agent validate and improve the code
 - Only return the final code after review and improvements
+- Always save the code to a file using the write_file tool
 """
 
         code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + """
@@ -183,13 +190,23 @@ When you are done fixing the code, send the final code back to the user.
         Returns:
             str: Path where logs were saved
         """
-        log_file = base_path + "agent.logs"
+        # Create base directory if it doesn't exist
+        os.makedirs(base_path, exist_ok=True)
+        
+        log_file = os.path.join(base_path, "agent.logs")
         counter = 1
         while os.path.exists(log_file):
-            log_file = base_path + f"agent_{counter}.logs"
+            log_file = os.path.join(base_path, f"agent_{counter}.logs")
             counter += 1
-        write_file(log_file, agent.get_logs())
-        return log_file
+            
+        try:
+            with open(log_file, 'w') as f:
+                f.write(str(agent.memory.steps))
+            print(f"Logs saved to: {log_file}")
+            return log_file
+        except Exception as e:
+            print(f"Error saving logs: {str(e)}")
+            return None
 
     def run(self, prompt):
         result = self.code_writing_agent.run(prompt)
