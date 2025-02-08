@@ -1,7 +1,3 @@
-ai_playground/
-.gradio/
-openrouter_models.txt
-
 env
 .env
 playground

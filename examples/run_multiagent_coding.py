@@ -1,7 +1,7 @@
-from experiments.multiagent_coding.smolagents.multiagent_coding_smolagents import MultiAgentCoding
+from multiagent_coding.smolagents.multiagent_coding_smolagents import MultiAgentCoding
 
 coding = MultiAgentCoding()
-#result = coding.run("Write a Python function to calculate factorial recursively.")
+result = coding.run("Write a Python function to calculate factorial recursively.")
 #result = coding.run("Add the simplest possible memory to the chatbot app. No databases, no saving to files. Just a simple in-memory dictionary to store the conversation history.")
 # result = coding.run("""
 # Fix this error:
@@ -35,9 +35,9 @@ coding = MultiAgentCoding()
 # Run the chatbot app accordign to readme.md. Tell me back how exactly do i access it on what url after you launch it.
 # """)
 
-result = coding.run("""
-Run the chatbot app with "python -m streamlit run chatbot_app/app.py". Tell me back how exactly do i access it on what url after you launch it. Do not give me guide on how to run it, run it yoruself and tell me where to access it.
-""")
+# result = coding.run("""
+# Run the chatbot app with "python -m streamlit run chatbot_app/app.py". Tell me back how exactly do i access it on what url after you launch it. Do not give me guide on how to run it, run it yoruself and tell me where to access it.
+# """)
 
 
 print(result)

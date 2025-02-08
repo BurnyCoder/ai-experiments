@@ -1,5 +1,5 @@
 import sys
-from experiments.multiagent_coding.smolagents.multiagent_coding_smolagents import MultiAgentCoding
+from multiagent_coding.smolagents.multiagent_coding_smolagents import MultiAgentCoding
 
 def main():
     """
@@ -8,7 +8,7 @@ def main():
     """
     coding = MultiAgentCoding()
     
-    print("Welcome to the MultiAgent Coding Terminal Interface!")
+    print("Welcome to the MultiAgent Coding!")
     print("Enter your coding requests, or type 'exit' to quit.")
     print("-" * 50)
 
@@ -26,14 +26,14 @@ def main():
             if not user_input:
                 continue
                 
-            print("\nGenerating code... Please wait...\n")
+            print("\nThinking... Please wait...\n")
             
             # Process the request
             result = coding.run(user_input)
             
             # Display the result
             print("-" * 50)
-            print("Generated Code:")
+            print("Final AI response to user:")
             print("-" * 50)
             print(result)
             print("-" * 50)
