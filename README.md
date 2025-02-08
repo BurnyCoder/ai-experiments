@@ -39,10 +39,9 @@ Coding Agent Settings:
 - `TESTS_PATH`: Path for tests (default: "tests/tests_multiagent_coding/")
 - `INCLUDE_CODEBASE_IN_SYSTEM_PROMPT`: Whether to include codebase in system prompt (default: "true")
 - `MORE_AUTHORIZED_IMPORTS`: Additional authorized imports (default: "streamlit,smolagents")
-
 Coding Agent System Prompts:
-- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent
-- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent
+- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent. This should be customized based on your project's needs - for example, whether you want the agent to focus on implementing core functionality quickly or take a more thorough approach with extensive error handling.
+- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent. The strictness level can be adjusted depending on your goals - from basic functionality verification to comprehensive error detection and optimization suggestions.
 
 ## Using MultiAgent Coding System
 
