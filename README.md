@@ -44,6 +44,21 @@ Coding Agent System Prompts:
 - `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent
 - `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent
 
+## Using MultiAgent Coding System
+
+### Setting Up Your Codebase
+
+To use the MultiAgent Coding System with your own codebase:
+
+1. Create a directory for your project in the `ai_playground` folder:
+```bash
+mkdir ai_playground/your_project_name
+```
+
+2. Place your codebase files in this directory. The MultiAgent Coding System will use this as the working directory for code generation, review, and modifications.
+
+3. When using any of the MultiAgent Coding interfaces, your project in `ai_playground` will be automatically recognized and the agents will work within this context.
+
 ## Available Interfaces
 
 ### 1. Terminal Synthesis System (memory isn't implemented yet)
