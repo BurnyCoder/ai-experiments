@@ -41,13 +41,8 @@ The application will open in your default web browser. You can then start chatti
 ## Features
 
 - Clean separation of concerns between frontend and backend
-- Modular and maintainable code structure
 - Clean, simple chat interface
-- Message history persistence during session
 - Real-time responses from Claude 3.5 Sonnet via Portkey
-- Loading spinner while waiting for responses
-- Error handling for failed API calls
-- Easily switchable between different chat backends
 
 ## Note
 
