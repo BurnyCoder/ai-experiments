@@ -40,7 +40,7 @@ default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "
             'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
             'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
-            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect']
+            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib']
 authorized_imports = os.getenv('MORE_AUTHORIZED_IMPORTS', ','.join(default_imports)).split(',')
 
 @tool
