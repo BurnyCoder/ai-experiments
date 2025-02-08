@@ -97,6 +97,78 @@ def write_file(filepath: str, content: str) -> str:
     except Exception as e:
         return f"Error writing file: {str(e)}"
 
+@tool
+def get_codebase() -> str:
+    """
+    Generates a prompt containing the entire codebase by recursively reading all files except those in .gitignore.
+    Checks for .gitignore files in root and subfolders.
+    
+    Returns:
+        str: A formatted string containing all code with file paths as headers
+    """
+    codebase_prompt = []
+    
+    # Store gitignore patterns from all .gitignore files
+    gitignore_patterns = {}
+    
+    def load_gitignore_patterns(directory):
+        """Load gitignore patterns from a directory's .gitignore file if it exists"""
+        gitignore_path = os.path.join(directory, '.gitignore')
+        if os.path.exists(gitignore_path):
+            try:
+                with open(gitignore_path, 'r') as f:
+                    return [line.strip() for line in f if line.strip() and not line.startswith('#')]
+            except Exception as e:
+                print(f"Error reading {gitignore_path}: {str(e)}")
+        return []
+
+    def is_ignored(path):
+        """Check if path matches any gitignore pattern from parent directories"""
+        rel_path = os.path.relpath(path, AI_PLAYGROUND_PATH)
+        current_dir = os.path.dirname(path)
+        
+        # Check patterns from current and all parent directories
+        while current_dir >= AI_PLAYGROUND_PATH:
+            if current_dir in gitignore_patterns:
+                for pattern in gitignore_patterns[current_dir]:
+                    if pattern.endswith('/'):
+                        if rel_path.startswith(pattern):
+                            return True
+                    elif pattern.startswith('*'):
+                        if rel_path.endswith(pattern[1:]):
+                            return True
+                    elif pattern in rel_path:
+                        return True
+            current_dir = os.path.dirname(current_dir)
+        return False
+
+    # First pass: collect all gitignore patterns
+    for root, _, _ in os.walk(AI_PLAYGROUND_PATH):
+        patterns = load_gitignore_patterns(root)
+        if patterns:
+            gitignore_patterns[root] = patterns
+
+    # Second pass: read files
+    for root, _, files in os.walk(AI_PLAYGROUND_PATH):
+        for file in files:
+            if file == '.gitignore':
+                continue
+            file_path = os.path.join(root, file)
+            if not is_ignored(file_path):
+                try:
+                    with open(file_path, 'r') as f:
+                        content = f.read()
+                        relative_path = os.path.relpath(file_path, AI_PLAYGROUND_PATH)
+                        # Detect file type for syntax highlighting
+                        ext = os.path.splitext(file)[1][1:]
+                        if ext:
+                            codebase_prompt.append(f"\n### {relative_path}\n```{ext}\n{content}\n```\n")
+                        else:
+                            codebase_prompt.append(f"\n### {relative_path}\n```\n{content}\n```\n")
+                except Exception as e:
+                    print(f"Error reading {file_path}: {str(e)}")
+                    
+    return "\n".join(codebase_prompt)
 
 class MultiAgentCoding:
     def __init__(self):        
@@ -212,7 +284,3 @@ When you are done fixing the code, send the final code back to the user.
         result = self.code_writing_agent.run(prompt)
         self.save_logs(TESTS_PATH, self.code_writing_agent)
         return result
-
-    def codebase_to_prompt(self):
-        #https://github.com/mufeedvh/code2prompt
-        return None
