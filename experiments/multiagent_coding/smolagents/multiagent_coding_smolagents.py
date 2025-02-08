@@ -16,7 +16,7 @@ from utils.portkey import gemini2flashthinking
 from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
 
 # Base path for AI playground
-AI_PLAYGROUND_PATH = "experiments/multiagent_coding/smolagents/ai_playground/"
+AI_PLAYGROUND_PATH = "ai_playground/"
 TESTS_PATH = "tests/tests_multiagent_coding/"
 
 # Create directories if they don't exist
