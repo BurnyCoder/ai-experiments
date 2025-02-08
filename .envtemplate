@@ -14,8 +14,8 @@ CODING_AGENT_MODEL="claude-3-5-sonnet-latest"
 # CODING_AGENT_MODEL="gemini-exp-1206"
 # CODING_AGENT_MODEL="gemini-flash"
 
-# Codign agent settings
-MAX_AGENT_STEPS=20
+# Coding agent settings
+MAX_AGENT_STEPS=10
 AI_PLAYGROUND_PATH="ai_playground/"
 TESTS_PATH="tests/tests_multiagent_coding/"
 INCLUDE_CODEBASE_IN_SYSTEM_PROMPT="true"
@@ -44,13 +44,20 @@ You have access to the current project's files in development through the follow
 - read_directory: List contents of a directory
 - write_file: Write content to a file
 
-Codebase:
-"
-
-CODE_REVIEW_AGENT_SYSTEM_PROMPT="You are an expert code reviewer. Your task is to review and fix the code provided to you. Make sure the code compiles functions correctly. When you are done fixing the code, send the final code back. Don't try to do too many changes, just make sure the code compiles and functions correctly.
+Do not do more than 5 iterations. Just quickly finish it.
 
 Codebase:
 "
+
+CODE_REVIEW_AGENT_SYSTEM_PROMPT="You are an expert code reviewer. Your task is to review and fix the code provided to you. Make sure the code compiles functions correctly. When you are done fixing the code, send the final code back. Don't try to do too many changes, just make sure the code compiles and functions correctly. 
+
+Don't be too harsh, you're not making production level code, just minimal changes to get the code to work.
+"
+
+# CODE_REVIEW_AGENT_SYSTEM_PROMPT="You are an expert code reviewer. Your task is to review and fix the code provided to you. Make sure the code compiles functions correctly. When you are done fixing the code, send the final code back. Don't try to do too many changes, just make sure the code compiles and functions correctly.
+
+# Codebase:
+# "
 
 # # System prompts for agents
 # CODE_WRITING_AGENT_SYSTEM_PROMPT="You are an expert Python programmer. Your task is to write clean, efficient, and well-documented code based on the given requirements.
