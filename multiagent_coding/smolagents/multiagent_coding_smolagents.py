@@ -40,7 +40,7 @@ default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "
             'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
             'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
-            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib']
+            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib', 'os']
 authorized_imports = os.getenv('MORE_AUTHORIZED_IMPORTS', ','.join(default_imports)).split(',')
 
 @tool
@@ -176,32 +176,14 @@ class MultiAgentCoding:
         include_codebase = os.getenv('INCLUDE_CODEBASE_IN_SYSTEM_PROMPT', 'true').lower() == 'true'
         codebase_str = get_codebase() if include_codebase else ""
         
-        code_writing_agent_system_prompt = CODE_SYSTEM_PROMPT + os.getenv('CODE_WRITING_AGENT_SYSTEM_PROMPT', """
-You are an expert Python programmer. Your task is to write clean, efficient, and well-documented code based on the given requirements.
-Follow these guidelines:
-- Write code that follows PEP 8 style guidelines
-- Include clear docstrings and comments
-- Use descriptive variable names
-- Write modular and reusable code
-- Handle edge cases and errors appropriately
-- Focus on readability and maintainability
-
-You have access to the current project's files in development through the following tools:
-- read_file: Read contents of a file
-- read_directory: List contents of a directory
-- write_file: Write content to a file
+        code_writing_agent_system_prompt = os.getenv('CODE_WRITING_AGENT_SYSTEM_PROMPT', """
+You are an expert Python programmer. 
 
 When you receive a coding task, don't return the final code directly. Instead:
 
 1. Write the initial code implementation
-2. Call the code review agent to review it using the code_review_agent tool
-3. Incorporate the feedback and improvements
-4. Return the final improved code
-
-You have access to the current project's files in development through the following tools:
-- read_file: Read contents of a file
-- read_directory: List contents of a directory
-- write_file: Write content to a file
+2. Call the code review agent to fix it using the code_review_agent tool
+3. Return the final improved code to the user
 
 Remember to:
 - Always use function calling rather than direct responses
@@ -211,26 +193,32 @@ Remember to:
 
 When you generate code, send it to the code review critic agent! After its reviewed, send the final code back to the user.
 
-Codebase:
-""") + codebase_str
+You have access to the current project's files in development through the following tools:
+- read_file: Read contents of a file
+- read_directory: List contents of a directory
+- write_file: Write content to a file
 
-        code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + os.getenv('CODE_REVIEW_AGENT_SYSTEM_PROMPT', """
-You are an expert code reviewer. Your task is to review and fix the code provided by the user.
-Focus on:
-- Code correctness and functionality
-- Style and PEP 8 compliance
-- Documentation and comments
-- Error handling
-- Performance and efficiency
-- Code organization and structure
-- Potential bugs or issues
-- Suggestions for improvement
-
-When you are done fixing the code, send the final code back to the user.
+Do not do more than 5 iterations. Just quickly finish it.
 
 Codebase:
-""") + codebase_str
+""")
+        
+        # print("Code Writing Agent System Prompt:")
+        # print(code_writing_agent_system_prompt)
+        
+        code_writing_agent_system_prompt = CODE_SYSTEM_PROMPT + code_writing_agent_system_prompt + codebase_str
 
+        code_review_agent_system_prompt = os.getenv('CODE_REVIEW_AGENT_SYSTEM_PROMPT', """
+You are an expert code reviewer. Your task is to review and fix the code provided to you. Make sure the code compiles functions correctly. When you are done fixing the code, send the final code back. Don't try to do too many changes, just make sure the code compiles and functions correctly. 
+
+Don't be too harsh, you're not making production level code, just minimal changes to get the code to work.
+""") 
+        
+        # print("Code Review Agent System Prompt:")
+        # print(code_review_agent_system_prompt)
+
+        code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + code_review_agent_system_prompt # + codebase_str
+       
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
             tools=[read_file, read_directory, write_file, get_codebase],
