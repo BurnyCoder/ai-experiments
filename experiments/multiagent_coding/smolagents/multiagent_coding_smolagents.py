@@ -173,7 +173,9 @@ def get_codebase() -> str:
 class MultiAgentCoding:
     def __init__(self):        
         self.model = PortkeyModel(model)
-               
+        
+        codebase = get_codebase()
+        
         code_writing_agent_system_prompt = CODE_SYSTEM_PROMPT + """
 You are an expert Python programmer. Your task is to write clean, efficient, and well-documented code based on the given requirements.
 Follow these guidelines:
@@ -208,7 +210,9 @@ Remember to:
 - Let the code review agent validate and improve the code
 - Only return the final code after review and improvements
 - Always save the code to a file using the write_file tool
-"""
+
+Codebase:
+""" + codebase
 
         code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + """
 You are an expert code reviewer. Your task is to review and fix the code provided by the user.
@@ -223,7 +227,9 @@ Focus on:
 - Suggestions for improvement
 
 When you are done fixing the code, send the final code back to the user.
-"""
+
+Codebase:
+""" + codebase
 
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
