@@ -5,7 +5,8 @@ from smolagents import (
     CodeAgent,
     ToolCallingAgent,
     tool,
-    ManagedAgent
+    ManagedAgent,
+    GradioUI
 )
 from smolagents import LiteLLMModel, OpenAIServerModel
 from smolagents.prompts import CODE_SYSTEM_PROMPT
@@ -258,6 +259,9 @@ Codebase:
             #use_e2b_executor=True
         )
 
+        # Initialize Gradio UI
+        self.ui = GradioUI(self.code_writing_agent)
+
     def save_logs(self, base_path, agent):
         """Save agent logs with incrementing number if file exists.
         
@@ -290,3 +294,7 @@ Codebase:
         result = self.code_writing_agent.run(prompt)
         self.save_logs(TESTS_PATH, self.code_writing_agent)
         return result
+
+    def launch_with_ui(self):
+        """Launch the Gradio UI interface"""
+        self.ui.launch()

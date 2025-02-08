@@ -26,4 +26,6 @@ mention that you have access to the current project in development using your to
 
 write the simplest chatbot app with streamlit frontend and @portkey.py backend
 
-add tool to get the whole codebase in a prompt
+add tool to get the whole codebase in a prompt, do not change anything else
+
+use gradioUI, example code:
