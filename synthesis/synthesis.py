@@ -1,4 +1,4 @@
-from utils.openrouter import gpt4o, claude35sonnet, gemini2flash
+from utils.portkey import gpt4o, claude35sonnet, gemini2pro, gemini2flashthinking
 import asyncio
 
 class SynthesisModel:
@@ -49,7 +49,7 @@ class SynthesisModel:
         responses = await asyncio.gather(
             self._get_response(gpt4o, prompt),
             self._get_response(claude35sonnet, prompt),
-            self._get_response(gemini2flash, prompt)
+            self._get_response(gemini2flashthinking, prompt)
         )
         
         gpt4_response, claude_response, gemini_response = responses
@@ -69,7 +69,7 @@ class SynthesisModel:
             synthesis_prompt += f"\n\n{extra_synthesis_prompt}"
         
         # Get initial synthesis using Gemini 2 Flash
-        synthesis_text = await self._get_response(gemini2flash, synthesis_prompt)
+        synthesis_text = await self._get_response(gemini2flashthinking, synthesis_prompt)
         
         if verify:
             # Verification prompt focused on completeness and accuracy
@@ -96,7 +96,7 @@ class SynthesisModel:
             Only respond with the synthesis text, no other text.
             """
             
-            synthesis_text = await self._get_response(gemini2flash, verification_prompt)
+            synthesis_text = await self._get_response(gemini2flashthinking, verification_prompt)
             
         # Return all results
         return {
