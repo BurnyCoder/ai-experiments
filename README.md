@@ -1,98 +1,82 @@
-# AI Experiments
+# AI Experiments Repository
 
-This repository contains various experiments and implementations related to AI agents, multi-agent systems, and language model interactions.
+This repository contains a collection of AI-powered tools and interfaces for different use cases. The main components include a MultiAgent Coding System, Multi-LLM Synthesis System, and various interfaces to interact with them.
 
-## Repository Structure
+## Installation
 
-```
-.
-├── experiments/
-│   ├── multiagent_coding/
-│   │   ├── multiagent_coding_smolagents.py   # Implementation of small, focused coding agents
-│   │   ├── fixed_prompt_pipeline.py          # Fixed prompt pipeline implementation
-│   │   └── noncoding_examples_for_reference/ # Reference examples of non-coding tasks
-│   └── aggregation.py                        # Aggregation experiment implementation
-├── utils/
-│   ├── openrouter.py                        # OpenRouter API integration utilities
-│   └── openrotuermodels.txt                 # List of available OpenRouter models
-├── run_multiagent_coding.py                 # Entry point for multi-agent coding experiments
-├── run_aggregation.py                       # Entry point for aggregation experiments
-├── run_openrouter.py                        # Entry point for OpenRouter-based experiments
-└── prompts.md                               # Collection of prompts used in experiments
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd ai-experiments
 ```
 
-## Components
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Linux/Mac
+# or
+.\venv\Scripts\activate  # On Windows
+```
 
-### Entry Points
-
-- `run_multiagent_coding.py`: Main script to run multi-agent coding experiments
-- `run_aggregation.py`: Script to execute aggregation experiments
-- `run_openrouter.py`: Script to run OpenRouter-based experiments
-
-### Experiments
-
-#### Multi-agent Coding
-Located in `experiments/multiagent_coding/`:
-- `multiagent_coding_smolagents.py`: Implements small, focused agents for coding tasks
-- `fixed_prompt_pipeline.py`: Contains a fixed prompt pipeline implementation
-- Reference examples for non-coding scenarios are stored in `noncoding_examples_for_reference/`
-
-#### Aggregation
-- `experiments/aggregation.py`: Implementation of aggregation experiment
-
-### Utilities
-
-Located in `utils/`:
-- `openrouter.py`: Provides utilities for interacting with the OpenRouter API
-- `openrotuermodels.txt`: Contains a list of available models through OpenRouter
-
-### Configuration
-
-- `.env`: Environment variables and configuration settings
-- `prompts.md`: Collection of prompts used across different experiments
-
-## Dependencies
-
-The project requires the following Python libraries:
-
-### Core Dependencies
-- `python-dotenv` - Environment variable management
-- `requests` - HTTP requests for API interactions
-- `smolagents` - Agent framework for multi-agent systems
-
-### Installation
-
-Install all required dependencies using pip:
-
+3. Install the required dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Setup
-
-1. Clone the repository
-2. Create and configure your `.env` file with necessary API keys and settings
-3. Install required dependencies
-
-## Usage
-
-Each experiment can be run using its corresponding entry point script:
-
+4. Create a `.env` file in the root directory with your API keys:
 ```bash
-# Run multi-agent coding experiments
-python run_multiagent_coding.py
-
-# Run aggregation experiments
-python run_aggregation.py
-
-# Run OpenRouter experiments
-python run_openrouter.py
+PORTKEY_API_KEY=your_portkey_api_key
+PORTKEY_VIRTUAL_KEY_ANTHROPIC=your_portkey_virtual_key_for_anthropic
+PORTKEY_VIRTUAL_KEY_OPENAI=your_portkey_virtual_key_for_openai
+PORTKEY_VIRTUAL_KEY_GOOGLE=your_portkey_virtual_key_for_google
 ```
 
-## Contributing
+## Available Interfaces
 
-Feel free to submit issues and enhancement requests.
+### 1. Terminal Synthesis System (memory wasnt implemented yet)
+A command-line interface for interacting with multiple LLMs and synthesizing their responses.
 
-## License
+To run:
+```bash
+python terminal_synthesis.py
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Features:
+- Interactive prompt-based interface
+- Displays individual responses from each model
+- Shows synthesized final response
+- Easy exit with 'exit' or 'quit' commands
+
+### 2. MultiAgent Coding Web Interface (has memory)
+A Gradio-based web interface for generating and reviewing code using a coder agent and a code reviewer agent.
+To run:
+```bash
+python app_multiagent_coding.py
+```
+
+Features:
+- User-friendly web interface
+- Real-time code generation
+- Code review and improvements
+- Visual feedback and interactions
+
+### 3. Terminal MultiAgent Coding (memory wasnt implemented yet)
+A command-line interface for the MultiAgent Coding system.
+
+To run:
+```bash
+python terminal_multiagent_coding.py
+```
+
+## Environment Variables
+
+The following environment variables can be configured in your `.env` file. You can use .envtemplate as a template:
+
+- `PORTKEY_API_KEY`: Your Portkey API key
+- `PORTKEY_VIRTUAL_KEY_ANTHROPIC`: Virtual key for Anthropic models
+- `PORTKEY_VIRTUAL_KEY_OPENAI`: Virtual key for OpenAI models
+- `PORTKEY_VIRTUAL_KEY_GOOGLE`: Virtual key for Google models
+- `CODING_AGENT_MODEL`: Model to use for coding (default: "claude-3-5-sonnet-latest")
+- `MAX_AGENT_STEPS`: Maximum number of steps for agents (default: 20)
+- `AI_PLAYGROUND_PATH`: Path for AI playground (default: "ai_playground/")
+- `TESTS_PATH`: Path for tests (default: "tests/tests_multiagent_coding/")
