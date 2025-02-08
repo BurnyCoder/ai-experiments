@@ -233,7 +233,7 @@ Codebase:
 
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file],
+            tools=[read_file, read_directory, write_file, get_codebase],
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
@@ -249,7 +249,7 @@ Codebase:
 
         #self.code_writing_agent = ToolCallingAgent(
         self.code_writing_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file],
+            tools=[read_file, read_directory, write_file, get_codebase],
             model=self.model,
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
