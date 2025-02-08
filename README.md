@@ -46,7 +46,7 @@ Coding Agent System Prompts:
 
 ## Available Interfaces
 
-### 1. Terminal Synthesis System (memory wasnt implemented yet)
+### 1. Terminal Synthesis System (memory isn't implemented yet)
 A command-line interface for interacting with multiple LLMs and synthesizing their responses.
 
 To run:
@@ -73,7 +73,7 @@ Features:
 - Code review and improvements
 - Visual feedback and interactions
 
-### 3. Terminal MultiAgent Coding (memory wasnt implemented yet)
+### 3. Terminal MultiAgent Coding (memory isn't implemented yet)
 A command-line interface for the MultiAgent Coding system.
 
 To run:
