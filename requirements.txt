@@ -1,34 +1,22 @@
 # Core dependencies
-python-dotenv
-requests
+python-dotenv==1.0.1
+requests==2.32.3
 
 # LLM and Agent frameworks
-smolagents
-langgraph
-langchain
-langchain-anthropic
-langchain-openai
-langchain-google-genai
-langchain-community
-langchain-experimental
-
-# Vector stores and embeddings
-faiss-cpu
+smolagents==1.7.0
+smolagents[e2b]
+smolagents[gradio]
 
 # API Wrappers
-anthropic
-google-generativeai
-openai
-portkey-ai
+portkey-ai==1.10.2
+anthropic==0.42.0
+google-generativeai==0.8.3
+openai==1.61.1
 
 # Telemetry and Monitoring
-opentelemetry-api
-opentelemetry-exporter-otlp
-openinference-instrumentation-smolagents
+opentelemetry-api==1.30.0
+opentelemetry-exporter-otlp==1.30.0
+openinference-instrumentation-smolagents==0.1.4
 
-# Development tools
-e2b
-
-# Optional dependencies
-wikipedia
-duckduckgo-search
+# Frontend
+streamlit==1.31.1
