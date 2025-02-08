@@ -72,11 +72,21 @@ python terminal_multiagent_coding.py
 
 The following environment variables can be configured in your `.env` file. You can use .envtemplate as a template:
 
+API keys:
+- `PORTKEY_API_BASE`: Base URL for Portkey API (default: "https://api.portkey.ai/v1")
 - `PORTKEY_API_KEY`: Your Portkey API key
 - `PORTKEY_VIRTUAL_KEY_ANTHROPIC`: Virtual key for Anthropic models
 - `PORTKEY_VIRTUAL_KEY_OPENAI`: Virtual key for OpenAI models
 - `PORTKEY_VIRTUAL_KEY_GOOGLE`: Virtual key for Google models
+
+Coding Agent Settings:
 - `CODING_AGENT_MODEL`: Model to use for coding (default: "claude-3-5-sonnet-latest")
 - `MAX_AGENT_STEPS`: Maximum number of steps for agents (default: 20)
 - `AI_PLAYGROUND_PATH`: Path for AI playground (default: "ai_playground/")
 - `TESTS_PATH`: Path for tests (default: "tests/tests_multiagent_coding/")
+- `INCLUDE_CODEBASE_IN_SYSTEM_PROMPT`: Whether to include codebase in system prompt (default: "true")
+- `MORE_AUTHORIZED_IMPORTS`: Additional authorized imports (default: "streamlit,smolagents")
+
+Coding Agent System Prompts:
+- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent
+- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent
