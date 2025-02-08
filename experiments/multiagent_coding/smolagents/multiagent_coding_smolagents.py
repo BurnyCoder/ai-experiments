@@ -17,7 +17,7 @@ from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyM
 
 # Base path for AI playground
 AI_PLAYGROUND_PATH = "experiments/multiagent_coding/smolagents/ai_playground/"
-TESTS_PATH = "experiments/multiagent_coding/smolagents/tests/"
+TESTS_PATH = "tests/tests_multiagent_coding/"
 
 # Create directories if they don't exist
 os.makedirs(AI_PLAYGROUND_PATH, exist_ok=True)
