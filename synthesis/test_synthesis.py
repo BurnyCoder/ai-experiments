@@ -1,13 +1,13 @@
 import os
 import asyncio
-from experiments.synthesis.synthesis import SynthesisModel
+from synthesis.synthesis import SynthesisModel
 
 async def test_logic(prompt, extra_synthesis_prompt=""):
     synthesis_model = SynthesisModel()
     results = await synthesis_model.chat([{"role": "user", "content": prompt}], extra_synthesis_prompt)
     
     # Create base test directory if it doesn't exist
-    base_dir = 'experiments/synthesis/tests'
+    base_dir = 'synthesis/tests'
     os.makedirs(base_dir, exist_ok=True)
     
     # Find next available numbered directory

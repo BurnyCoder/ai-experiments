@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import os
 
 from smolagents import (
@@ -8,33 +7,30 @@ from smolagents import (
     ManagedAgent,
     GradioUI
 )
-from smolagents import LiteLLMModel, OpenAIServerModel
 from smolagents.prompts import CODE_SYSTEM_PROMPT
 
 # from langchain_openai import ChatOpenAI
-from portkey_ai import createHeaders, PORTKEY_GATEWAY_URL
-from utils.portkey import gemini2flashthinking
-from experiments.multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
+from multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
 
-# Base path for AI playground
-AI_PLAYGROUND_PATH = "ai_playground/"
-TESTS_PATH = "tests/tests_multiagent_coding/"
+from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
+
+# Base paths from environment variables with defaults
+AI_PLAYGROUND_PATH = os.getenv('AI_PLAYGROUND_PATH', "ai_playground/")
+TESTS_PATH = os.getenv('TESTS_PATH', "tests/tests_multiagent_coding/")
 
 # Create directories if they don't exist
 os.makedirs(AI_PLAYGROUND_PATH, exist_ok=True)
 os.makedirs(TESTS_PATH, exist_ok=True)
 
-load_dotenv()
+# Model configuration from environment variables
 openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
-model = "claude-3-5-sonnet-latest"
-# model = "gemini-2.0-flash-thinking-exp-01-21"
-# model = "gemini-2.0-pro-exp-02-05"
-# model = "gemini-2.0-pro-exp"
-# model = "gemini-2.0-pro-exp"
-# model = "gemini-exp-1206"
-# model = "gemini-2.0-flash"
+model = os.getenv('CODING_AGENT_MODEL', "claude-3-5-sonnet-latest")
+max_steps = int(os.getenv('MAX_AGENT_STEPS', '20'))
 
-authorized_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "random", "queue", "time", "datetime", "math", "re",
+# Authorized imports from environment variable, falling back to default list
+default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "random", "queue", "time", "datetime", "math", "re",
             'unicodedata', 'itertools', 'collections', 'json', 'csv', 'os', 'sys', 'pathlib', 'typing',
             'dataclasses', 'enum', 'abc', 'functools', 'operator', 'copy', 'pprint', 'logging',
             'argparse', 'configparser', 'yaml', 'requests', 'urllib', 'http', 'socket', 'email',
@@ -44,7 +40,8 @@ authorized_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics"
             'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
             'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
-            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit']
+            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect']
+authorized_imports = os.getenv('AUTHORIZED_IMPORTS', ','.join(default_imports)).split(',')
 
 @tool
 def read_file(filepath: str) -> str:
@@ -175,9 +172,11 @@ class MultiAgentCoding:
     def __init__(self):        
         self.model = PortkeyModel(model)
         
-        codebase = get_codebase()
+        # Load prompts from environment variables with defaults
+        include_codebase = os.getenv('INCLUDE_CODEBASE_IN_SYSTEM_PROMPT', 'true').lower() == 'true'
+        codebase_str = get_codebase() if include_codebase else ""
         
-        code_writing_agent_system_prompt = CODE_SYSTEM_PROMPT + """
+        code_writing_agent_system_prompt = CODE_SYSTEM_PROMPT + os.getenv('CODE_WRITING_AGENT_SYSTEM_PROMPT', """
 You are an expert Python programmer. Your task is to write clean, efficient, and well-documented code based on the given requirements.
 Follow these guidelines:
 - Write code that follows PEP 8 style guidelines
@@ -192,8 +191,6 @@ You have access to the current project's files in development through the follow
 - read_directory: List contents of a directory
 - write_file: Write content to a file
 
-When you generate code, send it to the code review critic agent! After its reviewed, send the final code back to the user.
-""" + """
 When you receive a coding task, don't return the final code directly. Instead:
 
 1. Write the initial code implementation
@@ -212,10 +209,12 @@ Remember to:
 - Only return the final code after review and improvements
 - Always save the code to a file using the write_file tool
 
-Codebase:
-""" + codebase
+When you generate code, send it to the code review critic agent! After its reviewed, send the final code back to the user.
 
-        code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + """
+Codebase:
+""") + codebase_str
+
+        code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + os.getenv('CODE_REVIEW_AGENT_SYSTEM_PROMPT', """
 You are an expert code reviewer. Your task is to review and fix the code provided by the user.
 Focus on:
 - Code correctness and functionality
@@ -230,7 +229,7 @@ Focus on:
 When you are done fixing the code, send the final code back to the user.
 
 Codebase:
-""" + codebase
+""") + codebase_str
 
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
@@ -238,8 +237,7 @@ Codebase:
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
-            max_steps=20,
-            #use_e2b_executor=True
+            max_steps=max_steps,
         )
         
         self.managed_code_review_agent = ManagedAgent(
@@ -255,8 +253,7 @@ Codebase:
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
-            max_steps=20,
-            #use_e2b_executor=True
+            max_steps=max_steps,
         )
 
         # Initialize Gradio UI
