@@ -11,6 +11,7 @@ from smolagents.prompts import CODE_SYSTEM_PROMPT
 
 # from langchain_openai import ChatOpenAI
 from multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
+from utils.portkey import o3mini_high
 
 from dotenv import load_dotenv
 # Load environment variables
@@ -29,6 +30,16 @@ openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
 model = os.getenv('CODING_AGENT_MODEL', "claude-3-5-sonnet-latest")
 max_steps = int(os.getenv('MAX_AGENT_STEPS', '20'))
 planning_interval = int(os.getenv('PLANNING_INTERVAL', '3'))
+
+planning_agent_system_prompt = os.getenv('PLANNING_AGENT_SYSTEM_PROMPT', """
+Given a coding task, generate a clear, step-by-step plan that outlines:
+1. What needs to be implemented
+2. The sequence of steps to implement it
+3. Any potential challenges or considerations
+4. How to validate the implementation
+
+Format the response as a markdown list with clear sections.
+""")
 
 # Authorized imports from environment variable, falling back to default list
 default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "random", "queue", "time", "datetime", "math", "re",
@@ -170,6 +181,25 @@ def get_codebase() -> str:
                     
     return "\n".join(codebase_prompt)
 
+@tool
+def generate_plan(prompt: str) -> str:
+    """
+    Generates a plan for the given coding task using o3-mini-high model.
+    
+    Args:
+        prompt: The user's coding task request
+        
+    Returns:
+        str: A detailed plan outlining the steps to complete the task
+    """
+    planning_prompt = f"""
+{planning_agent_system_prompt}
+
+Given this coding task:
+{prompt}"""
+
+    return o3mini_high(planning_prompt)
+
 class MultiAgentCoding:
     def __init__(self):        
         self.model = PortkeyModel(model)
@@ -223,7 +253,7 @@ Don't be too harsh, you're not making production level code, just minimal change
        
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file], # get_codebase
+            tools=[read_file, read_directory, write_file, generate_plan], # get_codebase
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
@@ -239,7 +269,7 @@ Don't be too harsh, you're not making production level code, just minimal change
 
         #self.code_writing_agent = ToolCallingAgent(
         self.code_writing_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file], # get_codebase
+            tools=[read_file, read_directory, write_file, generate_plan], # get_codebase
             model=self.model,
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,

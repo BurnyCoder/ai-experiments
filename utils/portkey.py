@@ -57,6 +57,13 @@ def gemini2flashthinking(prompt):
     )
     return completion.choices[0].message.content
 
+def o3mini_high(prompt):
+    """Wrapper function for o3-mini-high model"""
+    completion = portkey_openai.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="o3-mini-2025-01-31"
+    )
+    return completion.choices[0].message.content
 
 def test():
     # Test Claude 3.5 Sonnet
