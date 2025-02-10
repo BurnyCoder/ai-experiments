@@ -28,6 +28,7 @@ os.makedirs(TESTS_PATH, exist_ok=True)
 openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
 model = os.getenv('CODING_AGENT_MODEL', "claude-3-5-sonnet-latest")
 max_steps = int(os.getenv('MAX_AGENT_STEPS', '20'))
+planning_interval = int(os.getenv('PLANNING_INTERVAL', '3'))
 
 # Authorized imports from environment variable, falling back to default list
 default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "random", "queue", "time", "datetime", "math", "re",
@@ -40,8 +41,9 @@ default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "
             'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
             'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
-            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib', 'os']
-authorized_imports = os.getenv('MORE_AUTHORIZED_IMPORTS', ','.join(default_imports)).split(',')
+            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib', 'os', 'typing']
+
+authorized_imports = default_imports + os.getenv('MORE_AUTHORIZED_IMPORTS', '').split(',')
 
 @tool
 def read_file(filepath: str) -> str:
@@ -221,27 +223,29 @@ Don't be too harsh, you're not making production level code, just minimal change
        
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file, get_codebase],
+            tools=[read_file, read_directory, write_file], # get_codebase
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
             max_steps=max_steps,
+            planning_interval=planning_interval
         )
         
         self.managed_code_review_agent = ManagedAgent(
             agent=self.code_review_agent,
             name="code_review_agent",
-            description="This is an agent that can review code and provide feedback.",
+            description="This is an agent that can review code and provide feedback."
         )
 
         #self.code_writing_agent = ToolCallingAgent(
         self.code_writing_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file, get_codebase],
+            tools=[read_file, read_directory, write_file], # get_codebase
             model=self.model,
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
             max_steps=max_steps,
+            planning_interval=planning_interval
         )
 
         # Initialize Gradio UI
