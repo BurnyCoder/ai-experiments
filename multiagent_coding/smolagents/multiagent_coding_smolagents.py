@@ -35,10 +35,14 @@ planning_agent_system_prompt = os.getenv('PLANNING_AGENT_SYSTEM_PROMPT', """
 Given a coding task, generate a clear, step-by-step plan that outlines:
 1. What needs to be implemented
 2. The sequence of steps to implement it
-3. Any potential challenges or considerations
-4. How to validate the implementation
 
 Format the response as a markdown list with clear sections.
+
+Remember to:
+- Be specific and actionable
+- Break down complex tasks into manageable pieces
+
+You're not making production level code, you're just making minimal changes to get the code to work.
 """)
 
 # Authorized imports from environment variable, falling back to default list
@@ -211,11 +215,16 @@ class MultiAgentCoding:
         code_writing_agent_system_prompt = os.getenv('CODE_WRITING_AGENT_SYSTEM_PROMPT', """
 You are an expert Python programmer. 
 
-When you receive a coding task, don't return the final code directly. Instead:
+When you receive a coding task:
 
-1. Write the initial code implementation
-2. Call the code review agent to fix it using the code_review_agent tool
-3. Return the final improved code to the user
+1. First get and review the generated plan from the planning tool
+2. Create your implementation plan based on the generated plan
+3. Write the initial code implementation
+4. Call the code review agent to fix it using the code_review_agent tool
+5. Return the final improved code to the user
+
+ALWAYS use the planning tool to get a plan for the coding task before writing any code.
+ALWAYS use the code review agent to review the code after it's written.
 
 Remember to:
 - Always use function calling rather than direct responses
@@ -229,6 +238,7 @@ You have access to the current project's files in development through the follow
 - read_file: Read contents of a file
 - read_directory: List contents of a directory
 - write_file: Write content to a file
+- generate_plan: Generate a detailed plan for the coding task
 
 Do not do more than 5 iterations. Just quickly finish it.
 
@@ -251,9 +261,16 @@ Don't be too harsh, you're not making production level code, just minimal change
 
         code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + code_review_agent_system_prompt # + codebase_str
        
+        # Get whether to use planning from environment variable
+        use_planning = os.getenv('USE_PLANNING', 'true').lower() == 'true'
+        
+        # Build tools list based on USE_PLANNING env var
+        base_tools = [read_file, read_directory, write_file] # get_codebase
+        tools = base_tools + [generate_plan] if use_planning else base_tools
+
         #self.code_review_agent = ToolCallingAgent(
         self.code_review_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file, generate_plan], # get_codebase
+            tools=tools,
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
@@ -269,7 +286,7 @@ Don't be too harsh, you're not making production level code, just minimal change
 
         #self.code_writing_agent = ToolCallingAgent(
         self.code_writing_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file, generate_plan], # get_codebase
+            tools=tools,
             model=self.model,
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
