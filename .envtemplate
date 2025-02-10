@@ -17,11 +17,12 @@ CODING_AGENT_MODEL="claude-3-5-sonnet-latest"
 # Coding agent settings
 MAX_AGENT_STEPS=10
 PLANNING_INTERVAL=3
-AI_PLAYGROUND_PATH="ai_playground/"
-TESTS_PATH="tests/tests_multiagent_coding/"
 INCLUDE_CODEBASE_IN_SYSTEM_PROMPT="true"
 MORE_AUTHORIZED_IMPORTS="streamlit,smolagents"
 
+# Path settings
+AI_PLAYGROUND_PATH="ai_playground/"
+TESTS_PATH="tests/tests_multiagent_coding/"
 
 # System prompts for agents
 CODE_WRITING_AGENT_SYSTEM_PROMPT="You are an expert Python programmer. 
