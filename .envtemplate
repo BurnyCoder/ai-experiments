@@ -17,21 +17,29 @@ CODING_AGENT_MODEL="claude-3-5-sonnet-latest"
 # Coding agent settings
 MAX_AGENT_STEPS=10
 PLANNING_INTERVAL=3
-AI_PLAYGROUND_PATH="ai_playground/"
-TESTS_PATH="tests/tests_multiagent_coding/"
+USE_O3_PLANNING="true"
+USE_CLARIFYING_QUESTIONS="true"
+USE_WEB_SEARCH="true"
 INCLUDE_CODEBASE_IN_SYSTEM_PROMPT="true"
 MORE_AUTHORIZED_IMPORTS="streamlit,smolagents"
 
+# Path settings
+AI_PLAYGROUND_PATH="ai_playground/"
+TESTS_PATH="tests/tests_multiagent_coding/"
 
 # System prompts for agents
 CODE_WRITING_AGENT_SYSTEM_PROMPT="You are an expert Python programmer. 
 
-When you receive a coding task, don't return the final code directly. Instead:
+When you receive a coding task:
 
-1. Create a plan for the code you will write
-2. Write the initial code implementation
-3. Call the code review agent to fix it using the code_review_agent tool
-4. Return the final improved code to the user
+1. First get and review the generated plan from the planning tool
+2. Create your implementation plan based on the generated plan
+3. Write the initial code implementation
+4. Call the code review agent to fix it using the code_review_agent tool
+5. Return the final improved code to the user
+
+ALWAYS use the planning tool to get a plan for the coding task before writing any code.
+ALWAYS use the code review agent to review the code after it's written.
 
 Remember to:
 - Always use function calling rather than direct responses
@@ -45,6 +53,7 @@ You have access to the current project's files in development through the follow
 - read_file: Read contents of a file
 - read_directory: List contents of a directory
 - write_file: Write content to a file
+- generate_plan: Generate a detailed plan for the coding task
 
 Critic might give you a lot of feedback, but you don't need to follow it all. Just make sure the code compiles and functions correctly.
 
@@ -58,7 +67,18 @@ CODE_REVIEW_AGENT_SYSTEM_PROMPT="You are an expert code reviewer. Your task is t
 Don't be too harsh, you're not making production level code, just minimal changes to get the code to work.
 "
 
+PLANNING_AGENT_SYSTEM_PROMPT="Given a coding task, generate a clear, step-by-step plan that outlines:
+1. What needs to be implemented
+2. The sequence of steps to implement it
 
+Format the response as a markdown list with clear sections.
+
+Remember to:
+- Be specific and actionable
+- Break down complex tasks into manageable pieces
+
+You're not making production level code, you're just making minimal changes to get the code to work.
+"
 
 # CODE_REVIEW_AGENT_SYSTEM_PROMPT="You are an expert code reviewer. Your task is to review and fix the code provided to you. Make sure the code compiles functions correctly. When you are done fixing the code, send the final code back. Don't try to do too many changes, just make sure the code compiles and functions correctly.
 
@@ -113,3 +133,17 @@ Don't be too harsh, you're not making production level code, just minimal change
 # Codebase:
 # "
 
+# PLANNING_AGENT_SYSTEM_PROMPT="Given a coding task, generate a clear, step-by-step plan that outlines:
+# 1. What needs to be implemented
+# 2. The sequence of steps to implement it
+# 3. Any potential challenges or considerations
+# 4. How to validate the implementation
+
+# Format the response as a markdown list with clear sections.
+
+# Remember to:
+# - Be specific and actionable
+# - Consider edge cases and potential issues
+# - Include validation steps
+# - Break down complex tasks into manageable pieces
+# "

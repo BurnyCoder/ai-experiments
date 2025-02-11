@@ -1,18 +1,30 @@
 import os
+import logging
 
 from smolagents import (
     CodeAgent,
     ToolCallingAgent,
     tool,
     ManagedAgent,
-    GradioUI
+    GradioUI,
+    DuckDuckGoSearchTool
 )
 from smolagents.prompts import CODE_SYSTEM_PROMPT
 
 # from langchain_openai import ChatOpenAI
 from multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
+from utils.portkey import o3minihigh, claude35sonnet
 
 from dotenv import load_dotenv
+
+# Set up logging
+logging.basicConfig(
+    level=logging.WARNING,  # Changed from INFO to WARNING to disable most logs
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+logger.disabled = True  # Disable this logger
+
 # Load environment variables
 load_dotenv()
 
@@ -29,6 +41,23 @@ openrouter_api_key = os.getenv('OPENROUTER_API_KEY')
 model = os.getenv('CODING_AGENT_MODEL', "claude-3-5-sonnet-latest")
 max_steps = int(os.getenv('MAX_AGENT_STEPS', '20'))
 planning_interval = int(os.getenv('PLANNING_INTERVAL', '3'))
+use_planning = os.getenv('USE_O3_PLANNING', 'true').lower() == 'true'
+use_clarifying_questions = os.getenv('USE_CLARIFYING_QUESTIONS', 'true').lower() == 'true'
+use_web_search = os.getenv('USE_WEB_SEARCH', 'false').lower() == 'true'
+
+planning_agent_system_prompt = os.getenv('PLANNING_AGENT_SYSTEM_PROMPT', """
+Given a coding task, generate a clear, step-by-step plan that outlines:
+1. What needs to be implemented
+2. The sequence of steps to implement it
+
+Format the response as a markdown list with clear sections.
+
+Remember to:
+- Be specific and actionable
+- Break down complex tasks into manageable pieces
+
+You're not making production level code, you're just making minimal changes to get the code to work.
+""")
 
 # Authorized imports from environment variable, falling back to default list
 default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "random", "queue", "time", "datetime", "math", "re",
@@ -54,11 +83,15 @@ def read_file(filepath: str) -> str:
     Returns:
         str: Contents of the file if successful, error message if failed
     """
+    logger.debug(f"Reading file: {filepath}")
     path = os.path.join(AI_PLAYGROUND_PATH, filepath)
     try:
         with open(path, 'r') as f:
-            return f.read()
+            content = f.read()
+            logger.debug(f"Successfully read file: {filepath}")
+            return content
     except Exception as e:
+        logger.error(f"Error reading file {filepath}: {str(e)}")
         return f"Error reading file: {str(e)}"
 
 @tool 
@@ -70,11 +103,14 @@ def read_directory(dirpath: str = "") -> str:
     Returns:
         str: List of files and folders in the directory if successful, error message if failed
     """
+    logger.debug(f"Reading directory: {dirpath}")
     path = os.path.join(AI_PLAYGROUND_PATH, dirpath)
     try:
         contents = os.listdir(path)
+        logger.debug(f"Successfully read directory: {dirpath}")
         return "\n".join(contents)
     except Exception as e:
+        logger.error(f"Error reading directory {dirpath}: {str(e)}")
         return f"Error reading directory: {str(e)}"
 
 @tool
@@ -87,14 +123,17 @@ def write_file(filepath: str, content: str) -> str:
     Returns:
         str: Success message if written, error message if failed
     """
+    logger.debug(f"Writing to file: {filepath}")
     path = os.path.join(AI_PLAYGROUND_PATH, filepath)
     try:
         # Create parent directories if they don't exist
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
+        logger.debug(f"Successfully wrote to file: {filepath}")
         return f"Successfully wrote to {path}"
     except Exception as e:
+        logger.error(f"Error writing to file {filepath}: {str(e)}")
         return f"Error writing file: {str(e)}"
 
 @tool
@@ -106,6 +145,7 @@ def get_codebase() -> str:
     Returns:
         str: A formatted string containing all code with file paths as headers
     """
+    logger.debug("Getting codebase")
     codebase_prompt = []
     
     # Store gitignore patterns from all .gitignore files
@@ -119,7 +159,7 @@ def get_codebase() -> str:
                 with open(gitignore_path, 'r') as f:
                     return [line.strip() for line in f if line.strip() and not line.startswith('#')]
             except Exception as e:
-                print(f"Error reading {gitignore_path}: {str(e)}")
+                logger.error(f"Error reading {gitignore_path}: {str(e)}")
         return []
 
     def is_ignored(path):
@@ -143,12 +183,14 @@ def get_codebase() -> str:
         return False
 
     # First pass: collect all gitignore patterns
+    logger.debug("Collecting gitignore patterns")
     for root, _, _ in os.walk(AI_PLAYGROUND_PATH):
         patterns = load_gitignore_patterns(root)
         if patterns:
             gitignore_patterns[root] = patterns
 
     # Second pass: read files
+    logger.debug("Reading files for codebase")
     for root, _, files in os.walk(AI_PLAYGROUND_PATH):
         for file in files:
             if file == '.gitignore':
@@ -166,12 +208,70 @@ def get_codebase() -> str:
                         else:
                             codebase_prompt.append(f"\n### {relative_path}\n```\n{content}\n```\n")
                 except Exception as e:
-                    print(f"Error reading {file_path}: {str(e)}")
+                    logger.error(f"Error reading {file_path}: {str(e)}")
                     
+    logger.debug("Successfully generated codebase")
     return "\n".join(codebase_prompt)
 
+@tool
+def generate_plan(prompt: str) -> str:
+    """
+    Generates a plan for the given coding task using o3-mini-high model.
+    
+    Args:
+        prompt: The user's coding task request
+        
+    Returns:
+        str: A detailed plan outlining the steps to complete the task
+    """
+    logger.debug("Generating plan")
+    planning_prompt = f"""
+{planning_agent_system_prompt}
+
+Given this coding task:
+{prompt}
+
+Codebase:
+{get_codebase()}
+"""
+
+    plan = o3minihigh(planning_prompt)
+    logger.debug("Successfully generated plan")
+    return plan
+
+@tool
+def ask_clarifying_questions(prompt: str) -> list:
+    """
+    Generates clarifying questions for the given coding task using o3-mini-high model.
+    
+    Args:
+        prompt: The user's coding task request
+        
+    Returns:
+        list: A list of clarifying questions
+    """
+    logger.debug("Generating clarifying questions")
+    clarifying_prompt = f"""
+Given this coding task, what clarifying questions would you ask to better understand the requirements?
+Please respond with a JSON array containing 3 key questions that would help clarify any ambiguities.
+Format the response as: ["question 1", "question 2", "question 3"]
+
+Task:
+{prompt}
+
+Codebase:
+{get_codebase()}
+"""
+
+    questions_json = o3minihigh(clarifying_prompt)
+    import json
+    questions = json.loads(questions_json)
+    logger.debug("Successfully generated clarifying questions")
+    return questions
+
 class MultiAgentCoding:
-    def __init__(self):        
+    def __init__(self):
+        logger.info("Initializing MultiAgentCoding")
         self.model = PortkeyModel(model)
         
         # Load prompts from environment variables with defaults
@@ -181,11 +281,18 @@ class MultiAgentCoding:
         code_writing_agent_system_prompt = os.getenv('CODE_WRITING_AGENT_SYSTEM_PROMPT', """
 You are an expert Python programmer. 
 
-When you receive a coding task, don't return the final code directly. Instead:
+When you receive a coding task:
 
-1. Write the initial code implementation
-2. Call the code review agent to fix it using the code_review_agent tool
-3. Return the final improved code to the user
+1. First ask clarifying questions using the ask_clarifying_questions tool
+2. Get and review the generated plan from the planning tool
+3. Create your implementation plan based on the generated plan
+4. Write the initial code implementation
+5. Call the code review agent to fix it using the code_review_agent tool
+6. Return the final improved code to the user
+
+ALWAYS ask clarifying questions before starting.
+ALWAYS use the planning tool to get a plan for the coding task before writing any code.
+ALWAYS use the code review agent to review the code after it's written.
 
 Remember to:
 - Always use function calling rather than direct responses
@@ -199,14 +306,13 @@ You have access to the current project's files in development through the follow
 - read_file: Read contents of a file
 - read_directory: List contents of a directory
 - write_file: Write content to a file
+- generate_plan: Generate a detailed plan for the coding task
+- ask_clarifying_questions: Ask clarifying questions about the task
 
 Do not do more than 5 iterations. Just quickly finish it.
 
 Codebase:
 """)
-        
-        # print("Code Writing Agent System Prompt:")
-        # print(code_writing_agent_system_prompt)
         
         code_writing_agent_system_prompt = CODE_SYSTEM_PROMPT + code_writing_agent_system_prompt + codebase_str
 
@@ -216,14 +322,20 @@ You are an expert code reviewer. Your task is to review and fix the code provide
 Don't be too harsh, you're not making production level code, just minimal changes to get the code to work.
 """) 
         
-        # print("Code Review Agent System Prompt:")
-        # print(code_review_agent_system_prompt)
-
         code_review_agent_system_prompt = CODE_SYSTEM_PROMPT + code_review_agent_system_prompt # + codebase_str
-       
-        #self.code_review_agent = ToolCallingAgent(
+               
+        # Build tools list based on USE_PLANNING and USE_CLARIFYING_QUESTIONS env vars
+        tools = [read_file, read_directory, write_file]
+        if use_web_search:
+            tools.append(DuckDuckGoSearchTool())
+        # if use_clarifying_questions:
+        #     tools.append(ask_clarifying_questions)
+        # if use_planning:
+        #     tools.append(generate_plan)
+
+        logger.info("Initializing code review agent")
         self.code_review_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file], # get_codebase
+            tools=tools,
             model=self.model,
             system_prompt=code_review_agent_system_prompt,
             additional_authorized_imports=authorized_imports,
@@ -237,9 +349,9 @@ Don't be too harsh, you're not making production level code, just minimal change
             description="This is an agent that can review code and provide feedback."
         )
 
-        #self.code_writing_agent = ToolCallingAgent(
+        logger.info("Initializing code writing agent")
         self.code_writing_agent = CodeAgent(
-            tools=[read_file, read_directory, write_file], # get_codebase
+            tools=tools,
             model=self.model,
             managed_agents=[self.managed_code_review_agent],
             system_prompt=code_writing_agent_system_prompt,
@@ -248,7 +360,6 @@ Don't be too harsh, you're not making production level code, just minimal change
             planning_interval=planning_interval
         )
 
-        # Initialize Gradio UI
         self.ui = GradioUI(self.code_writing_agent)
 
     def save_logs(self, base_path, agent):
@@ -261,6 +372,7 @@ Don't be too harsh, you're not making production level code, just minimal change
         Returns:
             str: Path where logs were saved
         """
+        logger.debug(f"Saving logs to {base_path}")
         # Create base directory if it doesn't exist
         os.makedirs(base_path, exist_ok=True)
         
@@ -273,17 +385,41 @@ Don't be too harsh, you're not making production level code, just minimal change
         try:
             with open(log_file, 'w') as f:
                 f.write(str(agent.memory.steps))
-            print(f"Logs saved to: {log_file}")
+            logger.info(f"Logs saved to: {log_file}")
             return log_file
         except Exception as e:
-            print(f"Error saving logs: {str(e)}")
+            logger.error(f"Error saving logs: {str(e)}")
             return None
 
-    def run(self, prompt):
-        result = self.code_writing_agent.run(prompt)
+    def run_terminal(self, prompt):
+        logger.info("Running terminal with prompt")
+        planning_prompt = prompt
+        
+        # First ask clarifying questions
+        if use_clarifying_questions:
+            print("Figuring out clarifying questions...\n")
+            questions = ask_clarifying_questions(prompt)
+            print(f"Clarifying Questions:")
+            for i, question in enumerate(questions, 1):
+                print(f"\n{i}. {question}")
+                answer = input(f"\nYour answer to question {i}: \n").strip()
+                prompt += f"\nQ: {question}\nA: {answer}"
+                planning_prompt += f"\nClarifying Question: {question}\nAnswer from the user: {answer}"
+        
+        if use_planning:
+            print("\nGenerating plan...\n")
+            plan = generate_plan(planning_prompt)
+            print(f"\nPlan: {plan}")
+            result = self.code_writing_agent.run(plan)
+        else:
+            logger.info("Running code writing agent without plan")
+            result = self.code_writing_agent.run(prompt)
+        
+        logger.info("Saving logs")
         self.save_logs(TESTS_PATH, self.code_writing_agent)
         return result
 
     def launch_with_ui(self):
         """Launch the Gradio UI interface"""
+        logger.info("Launching Gradio UI")
         self.ui.launch()

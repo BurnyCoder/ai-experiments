@@ -65,8 +65,8 @@ class PortkeyModel(Model):
 
         response = self.client.chat.completions.create(**completion_kwargs)
 
-        self.last_input_token_count = response.usage.prompt_tokens
-        self.last_output_token_count = response.usage.completion_tokens
+        self.last_input_token_count = response.usage.prompt_tokens if response.usage.prompt_tokens is not None else 0
+        self.last_output_token_count = response.usage.completion_tokens if response.usage.completion_tokens is not None else 0
 
         message = ChatMessage.from_dict(
             response.choices[0].message.model_dump(include={"role", "content", "tool_calls"})

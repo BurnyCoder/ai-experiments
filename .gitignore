@@ -5,7 +5,7 @@ openrouter_models.txt
 env
 .env
 playground
-
+tests/
 
 
 bin

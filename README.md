@@ -32,17 +32,23 @@ API keys:
 - `PORTKEY_VIRTUAL_KEY_OPENAI`: Virtual key for OpenAI models
 - `PORTKEY_VIRTUAL_KEY_GOOGLE`: Virtual key for Google models
 
+Coding Agent System Prompts:
+- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent. This should be customized based on your project's needs - for example, whether you want the agent to focus on implementing core functionality quickly or take a more thorough approach with extensive error handling.
+- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent. The strictness level can be adjusted depending on your goals - from basic functionality verification to comprehensive error detection and optimization suggestions.
+
 Coding Agent Settings:
 - `CODING_AGENT_MODEL`: Model to use for coding (default: "claude-3-5-sonnet-latest")
 - `MAX_AGENT_STEPS`: Maximum number of steps for agents (default: 20)
 - `PLANNING_INTERVAL`: Interval at which the agent will run a planning step (default: 3)
-- `AI_PLAYGROUND_PATH`: Path for AI playground (default: "ai_playground/")
-- `TESTS_PATH`: Path for tests (default: "tests/tests_multiagent_coding/")
+- `USE_O3_PLANNING`: Whether to use planning with O3 model (default: "true")
+- `USE_CLARIFYING_QUESTIONS`: Whether to use clarifying questions (default: "true")
+- `USE_WEB_SEARCH`: Whether to use web search (default: "false")
 - `INCLUDE_CODEBASE_IN_SYSTEM_PROMPT`: Whether to include codebase in system prompt (default: "true")
 - `MORE_AUTHORIZED_IMPORTS`: Additional authorized imports (default: "streamlit,smolagents")
-Coding Agent System Prompts:
-- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent. This should be customized based on your project's needs - for example, whether you want the agent to focus on implementing core functionality quickly or take a more thorough approach with extensive error handling.
-- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent. The strictness level can be adjusted depending on your goals - from basic functionality verification to comprehensive error detection and optimization suggestions.
+
+Path Settings
+- `AI_PLAYGROUND_PATH`: Path for AI playground (default: "ai_playground/")
+- `TESTS_PATH`: Path for tests (default: "tests/tests_multiagent_coding/")
 
 ## Using MultiAgent Coding System
 
@@ -52,7 +58,7 @@ To use the MultiAgent Coding System with your own codebase:
 
 1. Create a directory for your project in the `ai_playground` folder:
 ```bash
-mkdir ai_playground/your_project_name
+mkdir ai_playground
 ```
 
 2. Place your codebase files in this directory. The MultiAgent Coding System will use this as the working directory for code generation, review, and modifications.
@@ -61,7 +67,15 @@ mkdir ai_playground/your_project_name
 
 ## Available Interfaces
 
-### 1. Terminal Synthesis System (memory isn't implemented yet)
+### 1. Terminal MultiAgent Coding (memory isn't implemented)
+A command-line interface for the MultiAgent Coding system.
+
+To run:
+```bash
+python terminal_multiagent_coding.py
+```
+
+### 2. Terminal Synthesis System (memory isn't implemented)
 A command-line interface for interacting with multiple LLMs and synthesizing their responses.
 
 To run:
@@ -69,29 +83,9 @@ To run:
 python terminal_synthesis.py
 ```
 
-Features:
-- Interactive prompt-based interface
-- Displays individual responses from each model
-- Shows synthesized final response
-- Easy exit with 'exit' or 'quit' commands
-
-### 2. MultiAgent Coding Web Interface (has memory)
+### 3. MultiAgent Coding Web Interface (has memory)
 A Gradio-based web interface for generating and reviewing code using a coder agent and a code reviewer agent.
 To run:
 ```bash
 python app_multiagent_coding.py
-```
-
-Features:
-- User-friendly web interface
-- Real-time code generation
-- Code review and improvements
-- Visual feedback and interactions
-
-### 3. Terminal MultiAgent Coding (memory isn't implemented yet)
-A command-line interface for the MultiAgent Coding system.
-
-To run:
-```bash
-python terminal_multiagent_coding.py
 ```
