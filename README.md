@@ -43,7 +43,6 @@ Coding Agent Settings:
 - `USE_O3_PLANNING`: Whether to use planning with O3 model (default: "true")
 - `USE_CLARIFYING_QUESTIONS`: Whether to use clarifying questions (default: "true")
 - `USE_WEB_SEARCH`: Whether to use web search (default: "false")
-
 - `INCLUDE_CODEBASE_IN_SYSTEM_PROMPT`: Whether to include codebase in system prompt (default: "true")
 - `MORE_AUTHORIZED_IMPORTS`: Additional authorized imports (default: "streamlit,smolagents")
 
@@ -68,26 +67,20 @@ mkdir ai_playground
 
 ## Available Interfaces
 
-### 1. Terminal Synthesis System (memory isn't implemented yet)
-A command-line interface for interacting with multiple LLMs and synthesizing their responses.
-
-To run:
-```bash
-python terminal_synthesis.py
-```
-
-Features:
-- Interactive prompt-based interface
-- Displays individual responses from each model
-- Shows synthesized final response
-- Easy exit with 'exit' or 'quit' commands
-
-### 2. Terminal MultiAgent Coding (memory isn't implemented yet)
+### 1. Terminal MultiAgent Coding (memory isn't implemented)
 A command-line interface for the MultiAgent Coding system.
 
 To run:
 ```bash
 python terminal_multiagent_coding.py
+```
+
+### 2. Terminal Synthesis System (memory isn't implemented)
+A command-line interface for interacting with multiple LLMs and synthesizing their responses.
+
+To run:
+```bash
+python terminal_synthesis.py
 ```
 
 ### 3. MultiAgent Coding Web Interface (has memory)
@@ -96,9 +89,3 @@ To run:
 ```bash
 python app_multiagent_coding.py
 ```
-
-Features:
-- User-friendly web interface
-- Real-time code generation
-- Code review and improvements
-- Visual feedback and interactions
