@@ -1,6 +1,7 @@
 ai_playground/
 .gradio/
 openrouter_models.txt
+sample_chatbot_app/
 
 env
 .env
