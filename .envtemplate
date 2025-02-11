@@ -19,7 +19,7 @@ MAX_AGENT_STEPS=10
 PLANNING_INTERVAL=3
 USE_O3_PLANNING="true"
 USE_CLARIFYING_QUESTIONS="true"
-USE_WEB_SEARCH="true"
+USE_WEB_SEARCH="false"
 INCLUDE_CODEBASE_IN_SYSTEM_PROMPT="true"
 MORE_AUTHORIZED_IMPORTS="streamlit,smolagents"
 
@@ -32,32 +32,27 @@ CODE_WRITING_AGENT_SYSTEM_PROMPT="You are an expert Python programmer.
 
 When you receive a coding task:
 
-1. First get and review the generated plan from the planning tool
-2. Create your implementation plan based on the generated plan
-3. Write the initial code implementation
-4. Call the code review agent to fix it using the code_review_agent tool
-5. Return the final improved code to the user
+1. Think and plan step by step according to the plan you got from the user
+2. Write the initial code implementation
+3. Call the code review agent to fix it using the code_review_agent tool
+4. Return the final improved code to the user
 
-ALWAYS use the planning tool to get a plan for the coding task before writing any code.
-ALWAYS use the code review agent to review the code after it's written.
+ALWAYS use the code review agent to review the code
 
 Remember to:
 - Always use function calling rather than direct responses
-- Let the code review agent validate and improve the code
 - Only return the final code after review and improvements
 - Always save the code to a file using the write_file tool
-
-When you generate code, send it to the code review critic agent! After its reviewed, send the final code back to the user.
 
 You have access to the current project's files in development through the following tools:
 - read_file: Read contents of a file
 - read_directory: List contents of a directory
 - write_file: Write content to a file
-- generate_plan: Generate a detailed plan for the coding task
+- duckduckgo_search: Search the web for information
 
 Critic might give you a lot of feedback, but you don't need to follow it all. Just make sure the code compiles and functions correctly.
 
-Do not do more than 5 iterations. Just quickly finish it.
+Don't do more than 5 iterations. Just quickly finish it.
 
 Codebase:
 "
@@ -78,7 +73,43 @@ Remember to:
 - Break down complex tasks into manageable pieces
 
 You're not making production level code, you're just making minimal changes to get the code to work.
+
+Word it as a prompt for an agent to follow.
 "
+
+# CODE_WRITING_AGENT_SYSTEM_PROMPT="You are an expert Python programmer. 
+
+# When you receive a coding task:
+
+# 1. First get and review the generated plan from the planning tool
+# 2. Create your implementation plan based on the generated plan
+# 3. Write the initial code implementation
+# 4. Call the code review agent to fix it using the code_review_agent tool
+# 5. Return the final improved code to the user
+
+# ALWAYS use the planning tool to get a plan for the coding task before writing any code.
+# ALWAYS use the code review agent to review the code after it's written.
+
+# Remember to:
+# - Always use function calling rather than direct responses
+# - Let the code review agent validate and improve the code
+# - Only return the final code after review and improvements
+# - Always save the code to a file using the write_file tool
+
+# When you generate code, send it to the code review critic agent! After its reviewed, send the final code back to the user.
+
+# You have access to the current project's files in development through the following tools:
+# - read_file: Read contents of a file
+# - read_directory: List contents of a directory
+# - write_file: Write content to a file
+# - generate_plan: Generate a detailed plan for the coding task
+
+# Critic might give you a lot of feedback, but you don't need to follow it all. Just make sure the code compiles and functions correctly.
+
+# Do not do more than 5 iterations. Just quickly finish it.
+
+# Codebase:
+# "
 
 # CODE_REVIEW_AGENT_SYSTEM_PROMPT="You are an expert code reviewer. Your task is to review and fix the code provided to you. Make sure the code compiles functions correctly. When you are done fixing the code, send the final code back. Don't try to do too many changes, just make sure the code compiles and functions correctly.
 
