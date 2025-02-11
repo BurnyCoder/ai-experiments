@@ -33,8 +33,8 @@ API keys:
 - `PORTKEY_VIRTUAL_KEY_GOOGLE`: Virtual key for Google models
 
 Coding Agent System Prompts:
-- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent
-- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent
+- `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent. This should be customized based on your project's needs - for example, whether you want the agent to focus on implementing core functionality quickly or take a more thorough approach with extensive error handling.
+- `CODE_REVIEW_AGENT_SYSTEM_PROMPT`: System prompt for code review agent. The strictness level can be adjusted depending on your goals - from basic functionality verification to comprehensive error detection and optimization suggestions.
 
 Coding Agent Settings:
 - `CODING_AGENT_MODEL`: Model to use for coding (default: "claude-3-5-sonnet-latest")
