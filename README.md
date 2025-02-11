@@ -40,6 +40,10 @@ Coding Agent Settings:
 - `CODING_AGENT_MODEL`: Model to use for coding (default: "claude-3-5-sonnet-latest")
 - `MAX_AGENT_STEPS`: Maximum number of steps for agents (default: 20)
 - `PLANNING_INTERVAL`: Interval at which the agent will run a planning step (default: 3)
+- `USE_O3_PLANNING`: Whether to use planning with O3 model (default: "true")
+- `USE_CLARIFYING_QUESTIONS`: Whether to use clarifying questions (default: "true")
+- `USE_WEB_SEARCH`: Whether to use web search (default: "false")
+
 - `INCLUDE_CODEBASE_IN_SYSTEM_PROMPT`: Whether to include codebase in system prompt (default: "true")
 - `MORE_AUTHORIZED_IMPORTS`: Additional authorized imports (default: "streamlit,smolagents")
 
@@ -55,7 +59,7 @@ To use the MultiAgent Coding System with your own codebase:
 
 1. Create a directory for your project in the `ai_playground` folder:
 ```bash
-mkdir ai_playground/your_project_name
+mkdir ai_playground
 ```
 
 2. Place your codebase files in this directory. The MultiAgent Coding System will use this as the working directory for code generation, review, and modifications.
@@ -78,7 +82,15 @@ Features:
 - Shows synthesized final response
 - Easy exit with 'exit' or 'quit' commands
 
-### 2. MultiAgent Coding Web Interface (has memory)
+### 2. Terminal MultiAgent Coding (memory isn't implemented yet)
+A command-line interface for the MultiAgent Coding system.
+
+To run:
+```bash
+python terminal_multiagent_coding.py
+```
+
+### 3. MultiAgent Coding Web Interface (has memory)
 A Gradio-based web interface for generating and reviewing code using a coder agent and a code reviewer agent.
 To run:
 ```bash
@@ -90,11 +102,3 @@ Features:
 - Real-time code generation
 - Code review and improvements
 - Visual feedback and interactions
-
-### 3. Terminal MultiAgent Coding (memory isn't implemented yet)
-A command-line interface for the MultiAgent Coding system.
-
-To run:
-```bash
-python terminal_multiagent_coding.py
-```
