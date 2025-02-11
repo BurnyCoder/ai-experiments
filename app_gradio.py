@@ -1,4 +1,4 @@
-from multiagent_coding.smolagents.multiagent_coding_smolagents import MultiAgentCoding
+from core.smolagents import MultiAgentCoding
 
 def main():
     """

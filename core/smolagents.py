@@ -12,8 +12,8 @@ from smolagents import (
 from smolagents.prompts import CODE_SYSTEM_PROMPT
 
 # from langchain_openai import ChatOpenAI
-from multiagent_coding.smolagents.smolagents_portkey import PortkeyModel
-from utils.portkey import o3minihigh, claude35sonnet
+from core.smolagents_portkey_support import PortkeyModel
+from core.portkey_api import o3minihigh, claude35sonnet
 
 from dotenv import load_dotenv
 

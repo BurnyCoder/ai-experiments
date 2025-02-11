@@ -1,13 +1,13 @@
-# AI Experiments Repository
+# MultiAgent AI Coding
 
-This repository contains a collection of AI-powered tools and interfaces for different use cases. The main components include a MultiAgent Coding System, Multi-LLM Synthesis System, and various interfaces to interact with them.
+MultiAgent AI Coding system that first asks clarifying questions about the user's request, generates a detailed implementation plan, then uses specialized AI agents (a code writing agent to implement the solution and a code review agent to validate and improve the code) powered by various LLM providers through Portkey.ai, with support for both terminal and web interfaces.
 
 ## Installation
 
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd ai-experiments
+cd multiagent-ai-coding
 ```
 
 2. Create and activate a virtual environment:
@@ -67,24 +67,14 @@ mkdir ai_playground
 
 ## Available Interfaces
 
-### 1. Terminal MultiAgent Coding (memory isn't implemented)
-A command-line interface for the MultiAgent Coding system.
+### 1. Terminal Interface (memory isn't implemented)
 
 To run:
 ```bash
 python terminal_multiagent_coding.py
 ```
 
-### 2. Terminal Synthesis System (memory isn't implemented)
-A command-line interface for interacting with multiple LLMs and synthesizing their responses.
-
-To run:
-```bash
-python terminal_synthesis.py
-```
-
-### 3. MultiAgent Coding Web Interface (has memory)
-A Gradio-based web interface for generating and reviewing code using a coder agent and a code reviewer agent.
+### 2. Web Interface (has memory)
 To run:
 ```bash
 python app_multiagent_coding.py
