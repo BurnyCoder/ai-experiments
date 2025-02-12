@@ -12,6 +12,7 @@ from smolagents import (
     DuckDuckGoSearchTool
 )
 from smolagents.prompts import CODE_SYSTEM_PROMPT
+from smolagents.memory import TaskStep, ActionStep
 
 # from langchain_openai import ChatOpenAI
 from core.smolagents_portkey_support import PortkeyModel
@@ -79,7 +80,7 @@ default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
             'bz2', 'lzma', 'zipfile', 'tarfile', 'netrc', 'xdrlib', 'plistlib', 'hmac', 'secrets',
             'string', 'difflib', 'textwrap', 'subprocess', 'inspect', 'msvcrt', 'turtle', 'tty',
-            'termios', 'fcntl', 'select', 'ssl', 'pygame']
+            'termios', 'fcntl', 'select', 'ssl', 'pygame', 'curses']
 
 authorized_imports = default_imports + os.getenv('MORE_AUTHORIZED_IMPORTS', '').split(',')
 
@@ -249,7 +250,7 @@ Codebase:
 
     plan = planning_model(planning_prompt)
     logger.debug("Successfully generated plan")
-    return plan
+    return planning_prompt, plan
 
 @tool
 def ask_clarifying_questions(prompt: str) -> list:
@@ -279,7 +280,7 @@ Codebase:
     import json
     questions = json.loads(questions_json)
     logger.debug("Successfully generated clarifying questions")
-    return questions
+    return clarifying_prompt, questions
 
 class MultiAgentCoding:
     def __init__(self):
@@ -373,6 +374,12 @@ Don't be too harsh, you're not making production level code, just minimal change
         )
 
         self.ui = GradioUI(self.code_writing_agent)
+        
+        # Initialize instance variables
+        self.questions = None
+        self.plan = None
+        self.prompt = None
+        self.result = None
 
     def save_logs(self, base_path, agent):
         """Save agent logs with incrementing number if file exists.
@@ -403,106 +410,132 @@ Don't be too harsh, you're not making production level code, just minimal change
             logger.error(f"Error saving logs: {str(e)}")
             return None
 
-    def run_terminal(self, prompt):
-        logger.info("Running terminal with prompt")
-        planning_prompt = prompt
-        
+    def _store_agent_knowledge(self):
+        """Store agent interactions and knowledge for future reference"""
         turns = []
         turn_counter = 0
+        
+        # Add clarifying questions turn if questions were asked
+        if self.questions:
+            turn_counter += 1
+            turns.append({
+                "turn": turn_counter,
+                "inputs": self.clarifying_prompt,
+                "decision": json.dumps(self.questions),
+                "memory": "Generated clarifying questions",
+                "result": self.questions
+            })
+
+        # Add planning turn if plan was generated
+        if self.plan:
+            turn_counter += 1
+            turns.append({
+                "turn": turn_counter,
+                "inputs": self.planning_prompt,
+                "decision": "Generate implementation plan",
+                "memory": "Generated implementation plan",
+                "result": self.plan
+            })
+
+        # Add implementation turns
+        turn_counter += 1
+        turns.append({
+            "turn": turn_counter,
+            "inputs": self.prompt,
+            "decision": "Generate code implementation",
+            "memory": "Generated code implementation",
+            "result": self.result
+        })
+
+        # Convert agent memory steps to turns
+        if hasattr(self.code_writing_agent, 'memory') and self.code_writing_agent.memory:
+            for step in self.code_writing_agent.memory.steps:
+                turn_counter += 1
+                
+                if isinstance(step, TaskStep):
+                    turns.append({
+                        "turn": turn_counter,
+                        "inputs": step.task,
+                        "decision": "Task definition",
+                        "memory": "Defined task",
+                        "result": None
+                    })
+                
+                elif isinstance(step, ActionStep):
+                    # Extract input messages
+                    inputs = []
+                    for msg in step.model_input_messages:
+                        for content in msg['content']:
+                            if content['type'] == 'text':
+                                inputs.append(content['text'])
+                    
+                    # Extract tool calls
+                    tool_info = []
+                    if step.tool_calls:
+                        for call in step.tool_calls:
+                            tool_info.append({
+                                "name": call.name,
+                                "arguments": call.arguments,
+                                "id": call.id
+                            })
+                    
+                    turns.append({
+                        "turn": turn_counter,
+                        "inputs": "\n".join(inputs),
+                        "decision": json.dumps(tool_info) if tool_info else step.model_output,
+                        "memory": f"Step {step.step_number} execution",
+                        "result": step.action_output
+                    })
+
+        # Save turns to file for debugging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        turns_file = os.path.join(TESTS_PATH, f"turns_{timestamp}.txt")
+        with open(turns_file, 'w') as f:
+            f.write(str(turns))
+        
+        # Store the knowledge
+        store_knowledge(
+            query=self.prompt,
+            turns=turns,
+            success=True,
+            agent_type="code_writing"
+        )
+
+    def run_terminal(self, prompt):
+        logger.info("Running terminal with prompt")
+        self.planning_prompt = prompt
+        self.questions = None
+        self.plan = None
+        self.prompt = prompt
         
         # First ask clarifying questions
         if use_clarifying_questions:
             print("Figuring out clarifying questions...\n")
-            turn_counter += 1
-            clarifying_prompt = f"""
-Given this coding task, what clarifying questions would you ask to better understand the requirements?
-Please respond with a JSON array containing 3 key questions that would help clarify any ambiguities.
-Format the response as: ["question 1", "question 2", "question 3"]
-
-Task:
-{prompt}
-
-Codebase:
-{get_codebase()}
-"""
-            questions = ask_clarifying_questions(prompt)
-            
-            turns.append({
-                "turn": turn_counter,
-                "inputs": clarifying_prompt,
-                "decision": json.dumps(questions),
-                "memory": "Generated clarifying questions",
-                "result": questions
-            })
+            self.clarifying_prompt, self.questions = ask_clarifying_questions(prompt)
             
             print(f"Clarifying Questions:")
-            for i, question in enumerate(questions, 1):
+            for i, question in enumerate(self.questions, 1):
                 print(f"\n{i}. {question}")
                 answer = input(f"\nYour answer to question {i}: \n").strip()
-                prompt += f"\nQ: {question}\nA: {answer}"
-                planning_prompt += f"\nClarifying Question: {question}\nAnswer from the user: {answer}"
+                self.prompt += f"\nQ: {question}\nA: {answer}"
+                self.planning_prompt += f"\nClarifying Question: {question}\nAnswer from the user: {answer}"
         
+        # Generate and execute plan
         if use_planning:
             print("\nGenerating plan...\n")
-            turn_counter += 1
-            plan = generate_plan(planning_prompt)
-            
-            turns.append({
-                "turn": turn_counter,
-                "inputs": planning_prompt,
-                "decision": "Generate implementation plan",
-                "memory": "Generated implementation plan",
-                "result": plan
-            })
-            
-            print(f"\nPlan: {plan}")
-            result = self.code_writing_agent.run(plan)
+            self.planning_prompt, self.plan = generate_plan(self.planning_prompt)
+            print(f"\nPlan: {self.plan}")
+            self.result = self.code_writing_agent.run(self.plan)
         else:
             logger.info("Running code writing agent without plan")
-            result = self.code_writing_agent.run(prompt)
-        
-        turn_counter += 1
-        turns.append({
-            "turn": turn_counter,
-            "inputs": prompt,
-            "decision": "Generate code implementation",
-            "memory": "Generated code implementation",
-            "result": result
-        })
-        
-        # Save agent memory steps
-        print("\nAgent Memory Steps:")
-        print(self.code_writing_agent.memory.steps)
+            self.result = self.code_writing_agent.run(self.prompt)
 
-        # Save memory steps to file
-        memory_steps_path = os.path.join(TESTS_PATH, "memory_steps.json")
-        with open(memory_steps_path, "w") as f:
-            # Convert TaskStep objects to dictionaries before serializing
-            memory_steps = [step.to_dict() if hasattr(step, 'to_dict') else vars(step) 
-                          for step in self.code_writing_agent.memory.steps]
-            json.dump(memory_steps, f, indent=4)
+        # Store knowledge and save logs
+        self._store_agent_knowledge()
+        logger.info("Saving logs")
+        log_file = self.save_logs(TESTS_PATH, self.code_writing_agent)
         
-        #logger.info("Saving logs")
-        #log_file = self.save_logs(TESTS_PATH, self.code_writing_agent)
-        
-        # Store knowledge in Osmosis
-        knowledge_payload = {
-            "tenant_id": os.getenv('OSMOSIS_API_KEY'),
-            "query": prompt,
-            "turns": turns,
-            "success": True,
-            "agent_type": "code_writing",
-            "timestamp": datetime.utcnow().isoformat(),
-            "metadata": {
-                "log_file": log_file,
-                "use_planning": use_planning,
-                "use_clarifying_questions": use_clarifying_questions
-            }
-        }
-        
-        store_knowledge(knowledge_payload)
-        
-        return result
+        return self.result
 
     def launch_with_ui(self):
         """Launch the Gradio UI interface"""
