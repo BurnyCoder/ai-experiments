@@ -1,8 +1,8 @@
 import os
 import logging
 import json
-import uuid
 from datetime import datetime
+from typing import Dict, List, Optional, Any
 
 from smolagents import (
     CodeAgent,
@@ -15,12 +15,11 @@ from smolagents import (
 from smolagents.prompts import CODE_SYSTEM_PROMPT
 from smolagents.memory import TaskStep, ActionStep
 
-# from langchain_openai import ChatOpenAI
 from core.smolagents_portkey_support import PortkeyModel
 from core.portkey_api import o3minihigh, claude35sonnet
 from core.zep_api import ZepAPI
-from core.osmosis_api import OsmosisAPI
 
+from core.osmosis_api import OsmosisAPI
 store_knowledge = OsmosisAPI().store_knowledge
 delete_by_intent = OsmosisAPI().delete_by_intent
 enhance_task = OsmosisAPI().enhance_task
@@ -291,9 +290,8 @@ class MultiAgentCoding:
         self.model = PortkeyModel(model)
         
         # Initialize Zep memory
-        self.zep = ZepAPI()
-        self.session_id = str(uuid.uuid4())
-        self.zep.create_session(self.session_id)
+        self.zep_api = ZepAPI()
+        self.session_id = "0"
         
         # Load prompts from environment variables with defaults
         include_codebase = os.getenv('INCLUDE_CODEBASE_IN_SYSTEM_PROMPT', 'true').lower() == 'true'
@@ -422,53 +420,37 @@ Don't be too harsh, you're not making production level code, just minimal change
         """Store agent interactions and knowledge for future reference"""
         turns = []
         turn_counter = 0
-        messages = []
         
         # Add clarifying questions turn if questions were asked
         if self.questions:
             turn_counter += 1
-            turn_data = {
+            turns.append({
                 "turn": turn_counter,
                 "inputs": self.clarifying_prompt,
                 "decision": json.dumps(self.questions),
                 "memory": "Generated clarifying questions",
                 "result": self.questions
-            }
-            turns.append(turn_data)
-            messages.append({
-                "role": "assistant",
-                "content": f"Questions: {json.dumps(self.questions)}"
             })
 
         # Add planning turn if plan was generated
         if self.plan:
             turn_counter += 1
-            turn_data = {
+            turns.append({
                 "turn": turn_counter,
                 "inputs": self.planning_prompt,
                 "decision": "Generate implementation plan",
                 "memory": "Generated implementation plan",
                 "result": self.plan
-            }
-            turns.append(turn_data)
-            messages.append({
-                "role": "assistant",
-                "content": f"Plan: {self.plan}"
             })
 
         # Add implementation turns
         turn_counter += 1
-        turn_data = {
+        turns.append({
             "turn": turn_counter,
             "inputs": self.prompt,
             "decision": "Generate code implementation",
             "memory": "Generated code implementation",
             "result": self.result
-        }
-        turns.append(turn_data)
-        messages.append({
-            "role": "assistant",
-            "content": f"Implementation: {self.result}"
         })
 
         # Convert agent memory steps to turns
@@ -477,17 +459,12 @@ Don't be too harsh, you're not making production level code, just minimal change
                 turn_counter += 1
                 
                 if isinstance(step, TaskStep):
-                    turn_data = {
+                    turns.append({
                         "turn": turn_counter,
                         "inputs": step.task,
                         "decision": "Task definition",
                         "memory": "Defined task",
                         "result": None
-                    }
-                    turns.append(turn_data)
-                    messages.append({
-                        "role": "user",
-                        "content": step.task
                     })
                 
                 elif isinstance(step, ActionStep):
@@ -508,17 +485,12 @@ Don't be too harsh, you're not making production level code, just minimal change
                                 "id": call.id
                             })
                     
-                    turn_data = {
+                    turns.append({
                         "turn": turn_counter,
                         "inputs": "\n".join(inputs),
                         "decision": json.dumps(tool_info) if tool_info else step.model_output,
                         "memory": f"Step {step.step_number} execution",
                         "result": step.action_output
-                    }
-                    turns.append(turn_data)
-                    messages.append({
-                        "role": "assistant",
-                        "content": step.model_output
                     })
 
         # Save turns to file for debugging
@@ -527,8 +499,16 @@ Don't be too harsh, you're not making production level code, just minimal change
         with open(turns_file, 'w') as f:
             f.write(str(turns))
         
-        # Store in Zep memory
-        self.zep.add_memory(self.session_id, messages)
+        # Store the knowledge in Zep memory
+        self.zep_api.store_memory(
+            session_id=self.session_id,
+            messages=turns,
+            metadata={
+                "task": self.prompt,
+                "success": True,
+                "agent_type": "code_writing"
+            }
+        )
         
         # Store the knowledge in Osmosis
         store_knowledge(
@@ -545,23 +525,9 @@ Don't be too harsh, you're not making production level code, just minimal change
         self.plan = None
         self.prompt = prompt
         
-        # Add user prompt to Zep memory
-        self.zep.add_memory(self.session_id, [{
-            "role": "user",
-            "content": prompt
-        }])
-        
-        # Get relevant memories
-        memories = self.zep.search_memory(self.session_id, prompt)
-        memory_context = ""
-        if memories:
-            memory_context = "\n\nRelevant past interactions:\n"
-            for memory in memories:
-                memory_context += f"- {memory.messages[0].content}\n"
-        
-        # Enhance the task with relevant knowledge and memory context
+        # Enhance the task with relevant knowledge
         enhanced = enhance_task(
-            input_text=prompt + memory_context,
+            input_text=prompt,
             context={"codebase": get_codebase()},
             agent_type="code_writing",
         )
