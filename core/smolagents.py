@@ -1,5 +1,7 @@
 import os
 import logging
+import json
+from datetime import datetime
 
 from smolagents import (
     CodeAgent,
@@ -15,7 +17,13 @@ from smolagents.prompts import CODE_SYSTEM_PROMPT
 from core.smolagents_portkey_support import PortkeyModel
 from core.portkey_api import o3minihigh, claude35sonnet
 
+from core.osmosis_api import OsmosisAPI
+store_knowledge = OsmosisAPI().store_knowledge
+delete_by_intent = OsmosisAPI().delete_by_intent
+
 from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(
@@ -24,9 +32,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.disabled = True  # Disable this logger
-
-# Load environment variables
-load_dotenv()
 
 # Base paths from environment variables with defaults
 AI_PLAYGROUND_PATH = os.getenv('AI_PLAYGROUND_PATH', "ai_playground/")
@@ -44,6 +49,9 @@ planning_interval = int(os.getenv('PLANNING_INTERVAL', '3'))
 use_planning = os.getenv('USE_O3_PLANNING', 'true').lower() == 'true'
 use_clarifying_questions = os.getenv('USE_CLARIFYING_QUESTIONS', 'true').lower() == 'true'
 use_web_search = os.getenv('USE_WEB_SEARCH', 'false').lower() == 'true'
+
+planning_model = o3minihigh 
+clarifying_model = o3minihigh 
 
 planning_agent_system_prompt = os.getenv('PLANNING_AGENT_SYSTEM_PROMPT', """
 Given a coding task, generate a clear, step-by-step plan that outlines:
@@ -69,8 +77,9 @@ default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "
             'multiprocessing', 'concurrent', 'asyncio', 'contextvars', 'signal', 'mmap', 'readline',
             'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
-            'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
-            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib', 'os', 'typing']
+            'bz2', 'lzma', 'zipfile', 'tarfile', 'netrc', 'xdrlib', 'plistlib', 'hmac', 'secrets',
+            'string', 'difflib', 'textwrap', 'subprocess', 'inspect', 'msvcrt', 'turtle', 'tty',
+            'termios', 'fcntl', 'select', 'ssl', 'pygame']
 
 authorized_imports = default_imports + os.getenv('MORE_AUTHORIZED_IMPORTS', '').split(',')
 
@@ -139,14 +148,17 @@ def write_file(filepath: str, content: str) -> str:
 @tool
 def get_codebase() -> str:
     """
-    Generates a prompt containing the entire codebase by recursively reading all files except those in .gitignore.
-    Checks for .gitignore files in root and subfolders.
+    Generates a prompt containing the entire codebase by recursively reading all code files (.py, .js, .css, .html, .ts, etc.)
+    except those in .gitignore. Checks for .gitignore files in root and subfolders.
     
     Returns:
         str: A formatted string containing all code with file paths as headers
     """
     logger.debug("Getting codebase")
     codebase_prompt = []
+    
+    # Code file extensions to include
+    CODE_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx', '.css', '.scss', '.html', '.vue', '.go', '.java', '.cpp', '.c', '.h', '.rs', '.sql', '.md', '.txt', '.json', '.yaml', '.yml', '.toml', '.ini', '.conf', '.cfg', '.properties', '.env', '.lock', '.lockb', '.lock.json', '.lock.yaml', '.lock.yml', '.lock.toml', '.lock.ini', '.lock.conf', '.lock.cfg', '.lock.properties', '.lock.env'}
     
     # Store gitignore patterns from all .gitignore files
     gitignore_patterns = {}
@@ -193,20 +205,20 @@ def get_codebase() -> str:
     logger.debug("Reading files for codebase")
     for root, _, files in os.walk(AI_PLAYGROUND_PATH):
         for file in files:
-            if file == '.gitignore':
-                continue
             file_path = os.path.join(root, file)
+            file_ext = os.path.splitext(file)[1]
+            
+            if file_ext not in CODE_EXTENSIONS:
+                continue
+                
             if not is_ignored(file_path):
                 try:
                     with open(file_path, 'r') as f:
                         content = f.read()
                         relative_path = os.path.relpath(file_path, AI_PLAYGROUND_PATH)
                         # Detect file type for syntax highlighting
-                        ext = os.path.splitext(file)[1][1:]
-                        if ext:
-                            codebase_prompt.append(f"\n### {relative_path}\n```{ext}\n{content}\n```\n")
-                        else:
-                            codebase_prompt.append(f"\n### {relative_path}\n```\n{content}\n```\n")
+                        ext = file_ext[1:]  # Remove the dot
+                        codebase_prompt.append(f"\n### {relative_path}\n```{ext}\n{content}\n```\n")
                 except Exception as e:
                     logger.error(f"Error reading {file_path}: {str(e)}")
                     
@@ -235,7 +247,7 @@ Codebase:
 {get_codebase()}
 """
 
-    plan = o3minihigh(planning_prompt)
+    plan = planning_model(planning_prompt)
     logger.debug("Successfully generated plan")
     return plan
 
@@ -263,7 +275,7 @@ Codebase:
 {get_codebase()}
 """
 
-    questions_json = o3minihigh(clarifying_prompt)
+    questions_json = clarifying_model(clarifying_prompt)
     import json
     questions = json.loads(questions_json)
     logger.debug("Successfully generated clarifying questions")
@@ -395,10 +407,34 @@ Don't be too harsh, you're not making production level code, just minimal change
         logger.info("Running terminal with prompt")
         planning_prompt = prompt
         
+        turns = []
+        turn_counter = 0
+        
         # First ask clarifying questions
         if use_clarifying_questions:
             print("Figuring out clarifying questions...\n")
+            turn_counter += 1
+            clarifying_prompt = f"""
+Given this coding task, what clarifying questions would you ask to better understand the requirements?
+Please respond with a JSON array containing 3 key questions that would help clarify any ambiguities.
+Format the response as: ["question 1", "question 2", "question 3"]
+
+Task:
+{prompt}
+
+Codebase:
+{get_codebase()}
+"""
             questions = ask_clarifying_questions(prompt)
+            
+            turns.append({
+                "turn": turn_counter,
+                "inputs": clarifying_prompt,
+                "decision": json.dumps(questions),
+                "memory": "Generated clarifying questions",
+                "result": questions
+            })
+            
             print(f"Clarifying Questions:")
             for i, question in enumerate(questions, 1):
                 print(f"\n{i}. {question}")
@@ -408,15 +444,64 @@ Don't be too harsh, you're not making production level code, just minimal change
         
         if use_planning:
             print("\nGenerating plan...\n")
+            turn_counter += 1
             plan = generate_plan(planning_prompt)
+            
+            turns.append({
+                "turn": turn_counter,
+                "inputs": planning_prompt,
+                "decision": "Generate implementation plan",
+                "memory": "Generated implementation plan",
+                "result": plan
+            })
+            
             print(f"\nPlan: {plan}")
             result = self.code_writing_agent.run(plan)
         else:
             logger.info("Running code writing agent without plan")
             result = self.code_writing_agent.run(prompt)
         
-        logger.info("Saving logs")
-        self.save_logs(TESTS_PATH, self.code_writing_agent)
+        turn_counter += 1
+        turns.append({
+            "turn": turn_counter,
+            "inputs": prompt,
+            "decision": "Generate code implementation",
+            "memory": "Generated code implementation",
+            "result": result
+        })
+        
+        # Save agent memory steps
+        print("\nAgent Memory Steps:")
+        print(self.code_writing_agent.memory.steps)
+
+        # Save memory steps to file
+        memory_steps_path = os.path.join(TESTS_PATH, "memory_steps.json")
+        with open(memory_steps_path, "w") as f:
+            # Convert TaskStep objects to dictionaries before serializing
+            memory_steps = [step.to_dict() if hasattr(step, 'to_dict') else vars(step) 
+                          for step in self.code_writing_agent.memory.steps]
+            json.dump(memory_steps, f, indent=4)
+        
+        #logger.info("Saving logs")
+        #log_file = self.save_logs(TESTS_PATH, self.code_writing_agent)
+        
+        # Store knowledge in Osmosis
+        knowledge_payload = {
+            "tenant_id": os.getenv('OSMOSIS_API_KEY'),
+            "query": prompt,
+            "turns": turns,
+            "success": True,
+            "agent_type": "code_writing",
+            "timestamp": datetime.utcnow().isoformat(),
+            "metadata": {
+                "log_file": log_file,
+                "use_planning": use_planning,
+                "use_clarifying_questions": use_clarifying_questions
+            }
+        }
+        
+        store_knowledge(knowledge_payload)
+        
         return result
 
     def launch_with_ui(self):
