@@ -12,6 +12,8 @@ portkey-ai==1.10.2
 anthropic==0.42.0
 google-generativeai==0.8.3
 openai==1.61.1
+zep-python==2.0.2
+
 
 # Telemetry and Monitoring
 opentelemetry-api==1.30.0

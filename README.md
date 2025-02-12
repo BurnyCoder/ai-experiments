@@ -31,7 +31,7 @@ API keys:
 - `PORTKEY_VIRTUAL_KEY_ANTHROPIC`: Virtual key for Anthropic models
 - `PORTKEY_VIRTUAL_KEY_OPENAI`: Virtual key for OpenAI models
 - `PORTKEY_VIRTUAL_KEY_GOOGLE`: Virtual key for Google models
-- `ZEPP_API_KEY`: Your Zepp API key
+- `ZEP_API_KEY`: Your Zepp API key
 - `OSMOSIS_API_KEY`: Your Osmosis API key
 
 
