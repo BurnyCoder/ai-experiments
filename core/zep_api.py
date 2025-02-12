@@ -45,12 +45,11 @@ class ZepAPI:
             messages=zep_messages
         )
 
-    async def search_memory(self, session_id: str, query: str) -> List[Dict[str, Any]]:
+    async def search_memory(self, session_id: str) -> List[Dict[str, Any]]:
         """Search session memory for relevant messages
         
         Args:
             session_id: ID of session to search
-            query: Search query text
             
         Returns:
             List of relevant memory messages
