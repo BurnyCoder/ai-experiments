@@ -217,14 +217,6 @@ class ZepAPI:
     async def test(self):
         await self.add_a_lot_of_memory()
         
-        # Search memory
-        results = await ZepAPI().search_memory(
-            session_id="0",
-            query="Facts about physics"
-        )
-            
-        print("Search results:", results)
-
 if __name__ == "__main__":
     zep = ZepAPI()
     import asyncio
