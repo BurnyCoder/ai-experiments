@@ -51,7 +51,8 @@ class OsmosisAPI:
             json=payload
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()['response']
+        return result
 
     def store_knowledge(self, query: str, turns: List[Dict[str, Any]], 
                        success: Optional[bool] = None,

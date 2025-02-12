@@ -21,6 +21,7 @@ from core.portkey_api import o3minihigh, claude35sonnet
 from core.osmosis_api import OsmosisAPI
 store_knowledge = OsmosisAPI().store_knowledge
 delete_by_intent = OsmosisAPI().delete_by_intent
+enhance_task = OsmosisAPI().enhance_task
 
 from dotenv import load_dotenv
 # Load environment variables
@@ -507,6 +508,18 @@ Don't be too harsh, you're not making production level code, just minimal change
         self.questions = None
         self.plan = None
         self.prompt = prompt
+        
+        # Enhance the task with relevant knowledge
+        enhanced = enhance_task(
+            input_text=prompt,
+            context={"codebase": get_codebase()},
+            agent_type="code_writing",
+        )
+        
+        # Update prompts with enhanced knowledge if available
+        if enhanced and "enhanced_response" in enhanced:
+            self.planning_prompt = enhanced["enhanced_response"]
+            self.prompt = enhanced["enhanced_response"]
         
         # First ask clarifying questions
         if use_clarifying_questions:
