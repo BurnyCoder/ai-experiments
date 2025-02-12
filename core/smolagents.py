@@ -500,15 +500,11 @@ Don't be too harsh, you're not making production level code, just minimal change
             f.write(str(turns))
         
         # Store the knowledge in Zep memory
-        self.zep_api.store_memory(
+        import asyncio
+        asyncio.run(self.zep_api.add_memory(
             session_id=self.session_id,
-            messages=turns,
-            metadata={
-                "task": self.prompt,
-                "success": True,
-                "agent_type": "code_writing"
-            }
-        )
+            messages=[{"role": "user", "content": self.prompt}] + [{"role": "assistant", "content": str(turns)}]
+        ))
         
         # Store the knowledge in Osmosis
         store_knowledge(
