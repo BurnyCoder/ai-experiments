@@ -215,7 +215,13 @@ class ZepAPI:
             )
 
     async def test(self):
-        await self.add_a_lot_of_memory()
+        #await self.add_a_lot_of_memory()
+        # Test getting user facts
+        #facts = await self.get_facts("0")
+        #print("User facts:", facts)
+        
+        memory = await self.client.memory.get(session_id="0") 
+        print(memory)
         
 if __name__ == "__main__":
     zep = ZepAPI()
