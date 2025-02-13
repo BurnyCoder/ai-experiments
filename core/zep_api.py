@@ -130,23 +130,23 @@ class ZepAPI:
         
         # Create session
         await self.add_session(
-            user_id="0",
-            session_id="0"
+            user_id="1",
+            session_id="1"
         )
         
-        # Add sample chat history
-        chat_history = [
-            {
-                "role": "assistant",
-                "content": "How can I assist you today?"
-            },
-            {
-                "role": "user",
-                "content": "I dont need anything now."
-            }
-        ]
+        # # Add sample chat history
+        # chat_history = [
+        #     {
+        #         "role": "assistant",
+        #         "content": "How can I assist you today?"
+        #     },
+        #     {
+        #         "role": "user",
+        #         "content": "I dont need anything now."
+        #     }
+        # ]
         
-        await self.add_memory(session_id=0, messages=chat_history)
+        # await self.add_memory(session_id=0, messages=chat_history)
         
         # Add sample data to graph
         # sample_data = {
@@ -219,11 +219,11 @@ class ZepAPI:
         # Test getting user facts
         #facts = await self.get_facts("0")
         #print("User facts:", facts)
-        
-        memory = await self.search_memory("0")
+        await self.create_sample_user_and_session()
+        memory = await self.search_memory("1")
         print(memory)
         
-if __name__ == "__main__":
+def main():
     zep = ZepAPI()
     import asyncio
     asyncio.run(zep.test())

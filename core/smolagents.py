@@ -290,8 +290,8 @@ class MultiAgentCoding:
         self.model = PortkeyModel(model)
         
         # Initialize Zep memory
-        self.zep_api = ZepAPI()
-        self.session_id = "0"
+        self.memory = ZepAPI()
+        self.session_id = os.getenv('ZEP_SESSION_ID', '1')
         
         # Load prompts from environment variables with defaults
         include_codebase = os.getenv('INCLUDE_CODEBASE_IN_SYSTEM_PROMPT', 'true').lower() == 'true'
@@ -416,7 +416,7 @@ Don't be too harsh, you're not making production level code, just minimal change
             logger.error(f"Error saving logs: {str(e)}")
             return None
 
-    def _store_agent_knowledge(self):
+    def _store_agent_knowledge_and_memory(self):
         """Store agent interactions and knowledge for future reference"""
         turns = []
         turn_counter = 0
@@ -501,7 +501,7 @@ Don't be too harsh, you're not making production level code, just minimal change
         
         # Store the knowledge in Zep memory
         import asyncio
-        asyncio.run(self.zep_api.add_memory(
+        asyncio.run(self.memory.add_memory(
             session_id=self.session_id,
             messages=[{"role": "user", "content": self.prompt}] + [{"role": "assistant", "content": str(turns)}]
         ))
@@ -524,7 +524,7 @@ Don't be too harsh, you're not making production level code, just minimal change
         # Enhance the task with relevant knowledge
         enhanced = enhance_task(
             input_text=prompt,
-            context={"codebase": get_codebase()},
+            context={"codebase": get_codebase(), "memory": self.memory.search_memory(self.session_id)},
             agent_type="code_writing",
         )
         
@@ -556,7 +556,7 @@ Don't be too harsh, you're not making production level code, just minimal change
             self.result = self.code_writing_agent.run(self.prompt)
 
         # Store knowledge and save logs
-        self._store_agent_knowledge()
+        self._store_agent_knowledge_and_memory()
         logger.info("Saving logs")
         log_file = self.save_logs(TESTS_PATH, self.code_writing_agent)
         
