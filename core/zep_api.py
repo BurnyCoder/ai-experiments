@@ -55,7 +55,7 @@ class ZepAPI:
             List of relevant memory messages
         """
         memory = await self.client.memory.get(session_id=session_id)
-        return memory.messages
+        return memory.context
 
     async def add_session(self, user_id: str, session_id: str) -> None:
         """Create a new memory session for a user
@@ -122,10 +122,10 @@ class ZepAPI:
         """
         
         await self.add_user(
-            user_id="0",
-            email="0", 
-            first_name="0",
-            last_name="0"
+            user_id="1",
+            email="1", 
+            first_name="1",
+            last_name="1"
         )
         
         # Create session
@@ -220,7 +220,7 @@ class ZepAPI:
         #facts = await self.get_facts("0")
         #print("User facts:", facts)
         
-        memory = await self.client.memory.get(session_id="0") 
+        memory = await self.search_memory("0")
         print(memory)
         
 if __name__ == "__main__":
