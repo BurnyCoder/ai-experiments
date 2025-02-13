@@ -31,6 +31,9 @@ API keys:
 - `PORTKEY_VIRTUAL_KEY_ANTHROPIC`: Virtual key for Anthropic models
 - `PORTKEY_VIRTUAL_KEY_OPENAI`: Virtual key for OpenAI models
 - `PORTKEY_VIRTUAL_KEY_GOOGLE`: Virtual key for Google models
+- `ZEP_API_KEY`: Your Zepp API key
+- `OSMOSIS_API_KEY`: Your Osmosis API key
+
 
 Coding Agent System Prompts:
 - `CODE_WRITING_AGENT_SYSTEM_PROMPT`: System prompt for code writing agent. This should be customized based on your project's needs - for example, whether you want the agent to focus on implementing core functionality quickly or take a more thorough approach with extensive error handling.
@@ -71,11 +74,11 @@ mkdir ai_playground
 
 To run:
 ```bash
-python terminal_multiagent_coding.py
+python app_terminal.py
 ```
 
 ### 2. Web Interface (has memory)
 To run:
 ```bash
-python app_multiagent_coding.py
+python app_gradio.py
 ```

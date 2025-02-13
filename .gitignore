@@ -7,7 +7,7 @@ env
 .env
 playground
 tests/
-
+test.py
 
 bin
 include

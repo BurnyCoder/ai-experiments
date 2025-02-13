@@ -1,6 +1,10 @@
 import os
 import logging
-
+import json
+from datetime import datetime
+from typing import Dict, List, Optional, Any
+import asyncio
+        
 from smolagents import (
     CodeAgent,
     ToolCallingAgent,
@@ -10,12 +14,20 @@ from smolagents import (
     DuckDuckGoSearchTool
 )
 from smolagents.prompts import CODE_SYSTEM_PROMPT
+from smolagents.memory import TaskStep, ActionStep
 
-# from langchain_openai import ChatOpenAI
 from core.smolagents_portkey_support import PortkeyModel
 from core.portkey_api import o3minihigh, claude35sonnet
+from core.zep_api import ZepAPI
+
+from core.osmosis_api import OsmosisAPI
+store_knowledge = OsmosisAPI().store_knowledge
+delete_by_intent = OsmosisAPI().delete_by_intent
+enhance_task = OsmosisAPI().enhance_task
 
 from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(
@@ -24,9 +36,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.disabled = True  # Disable this logger
-
-# Load environment variables
-load_dotenv()
 
 # Base paths from environment variables with defaults
 AI_PLAYGROUND_PATH = os.getenv('AI_PLAYGROUND_PATH', "ai_playground/")
@@ -44,6 +53,9 @@ planning_interval = int(os.getenv('PLANNING_INTERVAL', '3'))
 use_planning = os.getenv('USE_O3_PLANNING', 'true').lower() == 'true'
 use_clarifying_questions = os.getenv('USE_CLARIFYING_QUESTIONS', 'true').lower() == 'true'
 use_web_search = os.getenv('USE_WEB_SEARCH', 'false').lower() == 'true'
+
+planning_model = o3minihigh 
+clarifying_model = o3minihigh 
 
 planning_agent_system_prompt = os.getenv('PLANNING_AGENT_SYSTEM_PROMPT', """
 Given a coding task, generate a clear, step-by-step plan that outlines:
@@ -69,8 +81,9 @@ default_imports = ["streamlit", "portkey", "smolagents", "stat", "statistics", "
             'multiprocessing', 'concurrent', 'asyncio', 'contextvars', 'signal', 'mmap', 'readline',
             'rlcompleter', 'struct', 'codecs', 'encodings', 'io', 'tempfile', 'shutil', 'glob',
             'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal', 'dbm', 'sqlite3', 'zlib', 'gzip',
-            'bz2', 'lzma', 'zipfile', 'tarfile', 'csv', 'configparser', 'netrc', 'xdrlib', 'plistlib',
-            'hmac', 'secrets', 'string', 'difflib', 'textwrap', 'threading', 'subprocess', 'streamlit', 'inspect', 'hashlib', 'os', 'typing']
+            'bz2', 'lzma', 'zipfile', 'tarfile', 'netrc', 'xdrlib', 'plistlib', 'hmac', 'secrets',
+            'string', 'difflib', 'textwrap', 'subprocess', 'inspect', 'msvcrt', 'turtle', 'tty',
+            'termios', 'fcntl', 'select', 'ssl', 'pygame', 'curses']
 
 authorized_imports = default_imports + os.getenv('MORE_AUTHORIZED_IMPORTS', '').split(',')
 
@@ -139,14 +152,17 @@ def write_file(filepath: str, content: str) -> str:
 @tool
 def get_codebase() -> str:
     """
-    Generates a prompt containing the entire codebase by recursively reading all files except those in .gitignore.
-    Checks for .gitignore files in root and subfolders.
+    Generates a prompt containing the entire codebase by recursively reading all code files (.py, .js, .css, .html, .ts, etc.)
+    except those in .gitignore. Checks for .gitignore files in root and subfolders.
     
     Returns:
         str: A formatted string containing all code with file paths as headers
     """
     logger.debug("Getting codebase")
     codebase_prompt = []
+    
+    # Code file extensions to include
+    CODE_EXTENSIONS = {'.py', '.js', '.jsx', '.ts', '.tsx', '.css', '.scss', '.html', '.vue', '.go', '.java', '.cpp', '.c', '.h', '.rs', '.sql', '.md', '.txt', '.json', '.yaml', '.yml', '.toml', '.ini', '.conf', '.cfg', '.properties', '.env', '.lock', '.lockb', '.lock.json', '.lock.yaml', '.lock.yml', '.lock.toml', '.lock.ini', '.lock.conf', '.lock.cfg', '.lock.properties', '.lock.env'}
     
     # Store gitignore patterns from all .gitignore files
     gitignore_patterns = {}
@@ -193,20 +209,20 @@ def get_codebase() -> str:
     logger.debug("Reading files for codebase")
     for root, _, files in os.walk(AI_PLAYGROUND_PATH):
         for file in files:
-            if file == '.gitignore':
-                continue
             file_path = os.path.join(root, file)
+            file_ext = os.path.splitext(file)[1]
+            
+            if file_ext not in CODE_EXTENSIONS:
+                continue
+                
             if not is_ignored(file_path):
                 try:
                     with open(file_path, 'r') as f:
                         content = f.read()
                         relative_path = os.path.relpath(file_path, AI_PLAYGROUND_PATH)
                         # Detect file type for syntax highlighting
-                        ext = os.path.splitext(file)[1][1:]
-                        if ext:
-                            codebase_prompt.append(f"\n### {relative_path}\n```{ext}\n{content}\n```\n")
-                        else:
-                            codebase_prompt.append(f"\n### {relative_path}\n```\n{content}\n```\n")
+                        ext = file_ext[1:]  # Remove the dot
+                        codebase_prompt.append(f"\n### {relative_path}\n```{ext}\n{content}\n```\n")
                 except Exception as e:
                     logger.error(f"Error reading {file_path}: {str(e)}")
                     
@@ -235,9 +251,9 @@ Codebase:
 {get_codebase()}
 """
 
-    plan = o3minihigh(planning_prompt)
+    plan = planning_model(planning_prompt)
     logger.debug("Successfully generated plan")
-    return plan
+    return planning_prompt, plan
 
 @tool
 def ask_clarifying_questions(prompt: str) -> list:
@@ -263,16 +279,20 @@ Codebase:
 {get_codebase()}
 """
 
-    questions_json = o3minihigh(clarifying_prompt)
+    questions_json = clarifying_model(clarifying_prompt)
     import json
     questions = json.loads(questions_json)
     logger.debug("Successfully generated clarifying questions")
-    return questions
+    return clarifying_prompt, questions
 
 class MultiAgentCoding:
     def __init__(self):
         logger.info("Initializing MultiAgentCoding")
         self.model = PortkeyModel(model)
+        
+        # Initialize Zep memory
+        self.memory = ZepAPI()
+        self.session_id = os.getenv('ZEP_SESSION_ID', '1')
         
         # Load prompts from environment variables with defaults
         include_codebase = os.getenv('INCLUDE_CODEBASE_IN_SYSTEM_PROMPT', 'true').lower() == 'true'
@@ -361,6 +381,12 @@ Don't be too harsh, you're not making production level code, just minimal change
         )
 
         self.ui = GradioUI(self.code_writing_agent)
+        
+        # Initialize instance variables
+        self.questions = None
+        self.plan = None
+        self.prompt = None
+        self.result = None
 
     def save_logs(self, base_path, agent):
         """Save agent logs with incrementing number if file exists.
@@ -391,33 +417,170 @@ Don't be too harsh, you're not making production level code, just minimal change
             logger.error(f"Error saving logs: {str(e)}")
             return None
 
+    def _store_agent_knowledge_and_memory(self):
+        """Store agent interactions and knowledge for future reference"""
+        turns = []
+        turn_counter = 0
+        
+        # Add clarifying questions turn if questions were asked
+        if self.questions:
+            turn_counter += 1
+            turns.append({
+                "turn": turn_counter,
+                "inputs": self.clarifying_prompt,
+                "decision": json.dumps(self.questions),
+                "memory": "Generated clarifying questions",
+                "result": self.questions
+            })
+
+        # Add planning turn if plan was generated
+        if self.plan:
+            turn_counter += 1
+            turns.append({
+                "turn": turn_counter,
+                "inputs": self.planning_prompt,
+                "decision": "Generate implementation plan",
+                "memory": "Generated implementation plan",
+                "result": self.plan
+            })
+
+        # Add implementation turns
+        turn_counter += 1
+        turns.append({
+            "turn": turn_counter,
+            "inputs": self.prompt,
+            "decision": "Generate code implementation",
+            "memory": "Generated code implementation",
+            "result": self.result
+        })
+
+        # Convert agent memory steps to turns
+        if hasattr(self.code_writing_agent, 'memory') and self.code_writing_agent.memory:
+            for step in self.code_writing_agent.memory.steps:
+                turn_counter += 1
+                
+                if isinstance(step, TaskStep):
+                    turns.append({
+                        "turn": turn_counter,
+                        "inputs": step.task,
+                        "decision": "Task definition",
+                        "memory": "Defined task",
+                        "result": None
+                    })
+                
+                elif isinstance(step, ActionStep):
+                    # Extract input messages
+                    inputs = []
+                    for msg in step.model_input_messages:
+                        for content in msg['content']:
+                            if content['type'] == 'text':
+                                inputs.append(content['text'])
+                    
+                    # Extract tool calls
+                    tool_info = []
+                    if step.tool_calls:
+                        for call in step.tool_calls:
+                            tool_info.append({
+                                "name": call.name,
+                                "arguments": call.arguments,
+                                "id": call.id
+                            })
+                    
+                    turns.append({
+                        "turn": turn_counter,
+                        "inputs": "\n".join(inputs),
+                        "decision": json.dumps(tool_info) if tool_info else step.model_output,
+                        "memory": f"Step {step.step_number} execution",
+                        "result": step.action_output
+                    })
+
+        # Save turns to file for debugging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        turns_file = os.path.join(TESTS_PATH, f"turns_{timestamp}.txt")
+        with open(turns_file, 'w') as f:
+            f.write(str(turns))
+        
+        # Add user prompt first
+        self.memory.add_memory(
+            session_id=self.session_id,
+            messages=[{"role": "user", "content": self.prompt}]
+        )
+        
+        # Split turns into chunks and add separately because of 2500 character limit
+        for turn in turns:
+            turn_str = str(turn)
+            chunk_size = 2000
+            
+            # Split turn into chunks if needed
+            if len(turn_str) > chunk_size:
+                chunks = [turn_str[i:i+chunk_size] for i in range(0, len(turn_str), chunk_size)]
+                for chunk in chunks:
+                    self.memory.add_memory(
+                        session_id=self.session_id,
+                        messages=[{"role": "assistant", "content": chunk}]
+                    )
+            else:
+                self.memory.add_memory(
+                    session_id=self.session_id, 
+                    messages=[{"role": "assistant", "content": turn_str}]
+                )
+        
+        # Store the knowledge in Osmosis
+        store_knowledge(
+            query=self.prompt,
+            turns=turns,
+            success=True,
+            agent_type="code_writing"
+        )
+
     def run_terminal(self, prompt):
         logger.info("Running terminal with prompt")
-        planning_prompt = prompt
+        self.planning_prompt = prompt
+        self.questions = None
+        self.plan = None
+        self.prompt = prompt
+    
+        memory = self.memory.search_memory(self.session_id) or ""
+
+        enhanced = enhance_task(
+                input_text=prompt,
+                context={"codebase": get_codebase(), "memory": memory},
+                agent_type="code_writing",
+            )
+        
+        # Update prompts with enhanced knowledge if available
+        if enhanced and "enhanced_response" in enhanced:
+            self.planning_prompt = enhanced["enhanced_response"]
+            self.prompt = enhanced["enhanced_response"]
         
         # First ask clarifying questions
         if use_clarifying_questions:
             print("Figuring out clarifying questions...\n")
-            questions = ask_clarifying_questions(prompt)
+            self.clarifying_prompt, self.questions = ask_clarifying_questions(prompt)
+            
             print(f"Clarifying Questions:")
-            for i, question in enumerate(questions, 1):
+            for i, question in enumerate(self.questions, 1):
                 print(f"\n{i}. {question}")
                 answer = input(f"\nYour answer to question {i}: \n").strip()
-                prompt += f"\nQ: {question}\nA: {answer}"
-                planning_prompt += f"\nClarifying Question: {question}\nAnswer from the user: {answer}"
+                self.prompt += f"\nQ: {question}\nA: {answer}"
+                self.planning_prompt += f"\nClarifying Question: {question}\nAnswer from the user: {answer}"
         
+        # Generate and execute plan
         if use_planning:
             print("\nGenerating plan...\n")
-            plan = generate_plan(planning_prompt)
-            print(f"\nPlan: {plan}")
-            result = self.code_writing_agent.run(plan)
+            self.planning_prompt, self.plan = generate_plan(self.planning_prompt)
+            print(f"\nPlan: {self.plan}")
+            self.result = self.code_writing_agent.run(self.plan)
         else:
             logger.info("Running code writing agent without plan")
-            result = self.code_writing_agent.run(prompt)
-        
+            self.result = self.code_writing_agent.run(self.prompt)
+
+        # Store knowledge and save logs
+        self._store_agent_knowledge_and_memory()
         logger.info("Saving logs")
-        self.save_logs(TESTS_PATH, self.code_writing_agent)
-        return result
+        log_file = self.save_logs(TESTS_PATH, self.code_writing_agent)
+        
+        return self.result
 
     def launch_with_ui(self):
         """Launch the Gradio UI interface"""
