@@ -74,11 +74,11 @@ mkdir ai_playground
 
 To run:
 ```bash
-python terminal_multiagent_coding.py
+python app_terminal.py
 ```
 
 ### 2. Web Interface (has memory)
 To run:
 ```bash
-python app_multiagent_coding.py
+python app_gradio.py
 ```
