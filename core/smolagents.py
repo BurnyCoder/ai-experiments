@@ -3,7 +3,8 @@ import logging
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-
+import asyncio
+        
 from smolagents import (
     CodeAgent,
     ToolCallingAgent,
@@ -499,12 +500,30 @@ Don't be too harsh, you're not making production level code, just minimal change
         with open(turns_file, 'w') as f:
             f.write(str(turns))
         
-        # Store the knowledge in Zep memory
-        import asyncio
-        asyncio.run(self.memory.add_memory(
+        # Add user prompt first
+        self.memory.add_memory(
             session_id=self.session_id,
-            messages=[{"role": "user", "content": self.prompt}] + [{"role": "assistant", "content": str(turns)}]
-        ))
+            messages=[{"role": "user", "content": self.prompt}]
+        )
+        
+        # Split turns into chunks and add separately because of 2500 character limit
+        for turn in turns:
+            turn_str = str(turn)
+            chunk_size = 2000
+            
+            # Split turn into chunks if needed
+            if len(turn_str) > chunk_size:
+                chunks = [turn_str[i:i+chunk_size] for i in range(0, len(turn_str), chunk_size)]
+                for chunk in chunks:
+                    self.memory.add_memory(
+                        session_id=self.session_id,
+                        messages=[{"role": "assistant", "content": chunk}]
+                    )
+            else:
+                self.memory.add_memory(
+                    session_id=self.session_id, 
+                    messages=[{"role": "assistant", "content": turn_str}]
+                )
         
         # Store the knowledge in Osmosis
         store_knowledge(
@@ -520,13 +539,14 @@ Don't be too harsh, you're not making production level code, just minimal change
         self.questions = None
         self.plan = None
         self.prompt = prompt
-        
-        # Enhance the task with relevant knowledge
+    
+        memory = self.memory.search_memory(self.session_id) or ""
+
         enhanced = enhance_task(
-            input_text=prompt,
-            context={"codebase": get_codebase(), "memory": self.memory.search_memory(self.session_id)},
-            agent_type="code_writing",
-        )
+                input_text=prompt,
+                context={"codebase": get_codebase(), "memory": memory},
+                agent_type="code_writing",
+            )
         
         # Update prompts with enhanced knowledge if available
         if enhanced and "enhanced_response" in enhanced:

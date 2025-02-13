@@ -2,7 +2,7 @@ import os
 from typing import Dict, List, Optional, Any
 from dotenv import load_dotenv
 from zep_cloud import Message
-from zep_cloud.client import AsyncZep
+from zep_cloud.client import Zep
 import uuid
 import json
 
@@ -22,9 +22,9 @@ class ZepAPI:
         if not self.api_key:
             raise ValueError("API key must be provided or set as ZEP_API_KEY environment variable")
             
-        self.client = AsyncZep(api_key=self.api_key)
+        self.client = Zep(api_key=self.api_key)
 
-    async def add_memory(self, session_id: str, messages: List[Dict[str, str]]) -> None:
+    def add_memory(self, session_id: str, messages: List[Dict[str, str]]) -> None:
         """Add messages to a session's memory
         
         Args:
@@ -40,12 +40,12 @@ class ZepAPI:
             for msg in messages
         ]
         
-        await self.client.memory.add(
+        self.client.memory.add(
             session_id=session_id,
             messages=zep_messages
         )
 
-    async def search_memory(self, session_id: str) -> List[Dict[str, Any]]:
+    def search_memory(self, session_id: str) -> List[Dict[str, Any]]:
         """Search session memory for relevant messages
         
         Args:
@@ -54,22 +54,22 @@ class ZepAPI:
         Returns:
             List of relevant memory messages
         """
-        memory = await self.client.memory.get(session_id=session_id)
+        memory = self.client.memory.get(session_id=session_id)
         return memory.context
 
-    async def add_session(self, user_id: str, session_id: str) -> None:
+    def add_session(self, user_id: str, session_id: str) -> None:
         """Create a new memory session for a user
         
         Args:
             user_id: ID of the user
             session_id: ID for the new session
         """
-        await self.client.memory.add_session(
+        self.client.memory.add_session(
             user_id=user_id,
             session_id=session_id
         )
 
-    async def add_user(self, user_id: str, email: str, first_name: str, last_name: str) -> None:
+    def add_user(self, user_id: str, email: str, first_name: str, last_name: str) -> None:
         """Add a new user
         
         Args:
@@ -78,14 +78,14 @@ class ZepAPI:
             first_name: User's first name
             last_name: User's last name
         """
-        await self.client.user.add(
+        self.client.user.add(
             user_id=user_id,
             email=email,
             first_name=first_name,
             last_name=last_name
         )
 
-    async def get_facts(self, user_id: str) -> Dict[str, Any]:
+    def get_facts(self, user_id: str) -> Dict[str, Any]:
         """Get facts about a user
         
         Args:
@@ -94,9 +94,9 @@ class ZepAPI:
         Returns:
             Dict containing user facts
         """
-        return await self.client.user.get_facts(user_id=user_id)
+        return self.client.user.get_facts(user_id=user_id)
 
-    async def search_graph(self, user_id: str, query: str, limit: int = 4) -> Dict[str, Any]:
+    def search_graph(self, user_id: str, query: str, limit: int = 4) -> Dict[str, Any]:
         """Search the knowledge graph
         
         Args:
@@ -107,21 +107,21 @@ class ZepAPI:
         Returns:
             Dict containing search results
         """
-        return await self.client.graph.search(
+        return self.client.graph.search(
             user_id=user_id,
             query=query,
             limit=limit,
             scope="edges"
         )
 
-    async def create_sample_user_and_session(self) -> tuple[str, str]:
+    def create_sample_user_and_session(self) -> tuple[str, str]:
         """Create a sample user and session for testing
         
         Returns:
             Tuple containing user_id and session_id
         """
         
-        await self.add_user(
+        self.add_user(
             user_id="1",
             email="1", 
             first_name="1",
@@ -129,7 +129,7 @@ class ZepAPI:
         )
         
         # Create session
-        await self.add_session(
+        self.add_session(
             user_id="1",
             session_id="1"
         )
@@ -146,7 +146,7 @@ class ZepAPI:
         #     }
         # ]
         
-        # await self.add_memory(session_id=0, messages=chat_history)
+        # self.add_memory(session_id=0, messages=chat_history)
         
         # Add sample data to graph
         # sample_data = {
@@ -156,14 +156,14 @@ class ZepAPI:
         #     }
         # }
         
-        # await self.client.graph.add(
+        # self.client.graph.add(
         #     user_id="0",
         #     data=json.dumps(sample_data),
         #     type="json"
         # )
         
 
-    async def add_a_lot_of_memory(self):
+    def add_a_lot_of_memory(self):
         """Add multiple sample memories about random topics"""
         memories = [
             {
@@ -209,21 +209,23 @@ class ZepAPI:
         ]
 
         for memory_pair in zip(memories[::2], memories[1::2]):
-            await self.add_memory(
+            self.add_memory(
                 session_id="0",
                 messages=list(memory_pair)
             )
 
-    async def test(self):
-        #await self.add_a_lot_of_memory()
+    def test(self):
+        #self.add_a_lot_of_memory()
         # Test getting user facts
-        #facts = await self.get_facts("0")
+        #facts = self.get_facts("0")
         #print("User facts:", facts)
-        await self.create_sample_user_and_session()
-        memory = await self.search_memory("1")
+        #self.create_sample_user_and_session()
+        memory = self.search_memory("1")
         print(memory)
         
 def main():
     zep = ZepAPI()
-    import asyncio
-    asyncio.run(zep.test())
+    zep.test()
+    
+if __name__ == "__main__":
+    main()
